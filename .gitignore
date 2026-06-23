@@ -1,0 +1,29 @@
+﻿### Windows
+# Windows thumbnail cache files
+Thumbs.db
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows shortcuts
+*.lnk
+src/__pycache__
+*/__pycache__
+*__pycache__
+
+# Configuratie (machine-specifiek)
+.env
+
+# Python build-artefacten
+*.egg-info/
+dist/
+build/
+__pycache__/
+*.pyc
+
+# .NET build-artefacten
+binaryTools/*/bin/
+binaryTools/*/obj/
