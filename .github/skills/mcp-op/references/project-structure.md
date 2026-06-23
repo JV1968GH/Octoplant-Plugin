@@ -3,7 +3,7 @@
 ## Mapstructuur
 
 ```
-Octoplant/
+Octoplant-Plugin/
 ├── server.py                   # MCP-server entry point
 ├── assets/
 │   └── Octoplant.png           # Icoon voor MCP-servermetadata
@@ -47,8 +47,8 @@ Octoplant/
 
 ```powershell
 # 1. Clone het repo
-git clone <repo-url> Octoplant
-cd Octoplant
+git clone https://github.com/JV1968GH/Octoplant-Plugin.git
+cd Octoplant-Plugin
 
 # 2. Eenmalig installeren (conda env + dependencies + exe bouwen)
 .\scripts\install.ps1

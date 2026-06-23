@@ -23,8 +23,8 @@ OctoPlant/versiondog: componenten uitchecken en projectdata exporteren.
 ### Stap 1 — Repository klonen
 
 ```powershell
-git clone <repo-url> Octoplant
-cd Octoplant
+git clone https://github.com/JV1968GH/Octoplant-Plugin.git
+cd Octoplant-Plugin
 ```
 
 ### Stap 2 — Eenmalig installatiescript uitvoeren
@@ -243,7 +243,7 @@ Configureerbaar via `OCTOPLANT_CHECKOUT_PATH` in `.env`.
 ## Projectstructuur
 
 ```
-Octoplant/
+Octoplant-Plugin/
 ├── server.py                    # MCP-server entry point
 ├── .env.example                 # Configuratiesjabloon (kopieer naar .env)
 ├── pyproject.toml               # Python-dependencies
