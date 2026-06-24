@@ -46,7 +46,8 @@ Open `.env` en vul de waarden in voor dit toestel:
 ```ini
 OCTOPLANT_SERVER=https://jouw-server:64023
 OCTOPLANT_ARCHIVE_PATH=D:\vdClientArchive
-OCTOPLANT_VDOG_CLIENT_PATH=C:\Program Files\vdogClient
+# Optioneel; leeg laten gebruikt auto-discover
+OCTOPLANT_VDOG_CLIENT_PATH=
 OCTOPLANT_SSL_VERIFY=false
 ```
 

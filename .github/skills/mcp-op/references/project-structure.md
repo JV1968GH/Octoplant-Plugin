@@ -71,7 +71,7 @@ code .
 OCTOPLANT_SERVER=https://your-server:64023
 OCTOPLANT_DOMAIN=AD-domein
 OCTOPLANT_ARCHIVE_PATH=D:\vdClientArchive
-OCTOPLANT_VDOG_CLIENT_PATH=C:\Program Files\vdogClient
+OCTOPLANT_VDOG_CLIENT_PATH=
 OCTOPLANT_SSL_VERIFY=false
 ```
 
@@ -81,7 +81,7 @@ OCTOPLANT_SSL_VERIFY=false
 | `OCTOPLANT_DOMAIN` | AD-domein (optioneel — ook per user in GUI) |
 | `OCTOPLANT_ARCHIVE_PATH` | `/rd:` parameter voor CLI-tools |
 | `OCTOPLANT_CHECKOUT_PATH` | Workspace mirror-bestemming (standaard `{projectroot}\octoPlantCheckouts`) |
-| `OCTOPLANT_VDOG_CLIENT_PATH` | Map met `VDogAutoCheckOut.exe` en `VDogAutoExport.exe` |
+| `OCTOPLANT_VDOG_CLIENT_PATH` | Optioneel pad naar map met `VDogAutoCheckOut.exe` en `VDogAutoExport.exe` (auto-discover indien leeg) |
 | `OCTOPLANT_SSL_VERIFY` | `true`/`false` voor SSL-certificaatvalidatie |
 
 > Gebruikersnaam en wachtwoord zijn **niet** aanwezig in `.env` en worden nooit

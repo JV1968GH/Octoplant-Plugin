@@ -27,12 +27,23 @@ _VDOGCHECKOUT_DEFAULT = (
     _PROJECT_ROOT / "binaryTools" / "VDogCheckOut" / "publish" / "VDogCheckOut.exe"
 )
 
+
 _CHECKOUT_RETURN_CODES: dict[int, str] = {
     0: "OK -- ten minste een component uitgecheckt",
     1: "Fout -- geen check-out mogelijk of minimaal een mislukt",
     2: "Geen componenten gevonden (onvoldoende rechten?)",
     1000: "Login-fout -- controleer gebruikersnaam en wachtwoord",
 }
+
+_VDOG_CLIENT_CANDIDATES = (
+    Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "vdogClient",
+    Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "vdogClient",
+    Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "vdogClient",
+)
+
+
+class OctoplantConfigError(RuntimeError):
+    """Wordt gegooid wanneer verplichte configuratie ontbreekt."""
 
 
 class OctoplantApiError(RuntimeError):
@@ -71,7 +82,7 @@ class OctoplantClient:
 
         self.server: str = os.environ["OCTOPLANT_SERVER"].rstrip("/")
         self.archive_path: str = os.environ["OCTOPLANT_ARCHIVE_PATH"]
-        self.vdog_client_path: str = os.environ.get("OCTOPLANT_VDOG_CLIENT_PATH", "")
+        self.vdog_client_path: str = ""
         self.ssl_verify: bool = (
             os.environ.get("OCTOPLANT_SSL_VERIFY", "true").lower() != "false"
         )
@@ -84,14 +95,21 @@ class OctoplantClient:
 
         # VDogCheckOut.exe: env override of auto-discover naast project
         _exe_override = os.environ.get("VDOGCHECKOUT_EXE", "")
-        self._vdogcheckout_exe: str = (
-            _exe_override if _exe_override else str(_VDOGCHECKOUT_DEFAULT)
+        self._vdogcheckout_exe: str = str(
+            self._resolve_existing_file(
+                _exe_override if _exe_override else str(_VDOGCHECKOUT_DEFAULT),
+                _PROJECT_ROOT,
+            )
         )
         if not Path(self._vdogcheckout_exe).exists():
             raise OctoplantConfigError(
                 f"VDogCheckOut.exe niet gevonden: {self._vdogcheckout_exe}\n"
                 "Bouw het project of stel VDOGCHECKOUT_EXE in .env in."
             )
+
+        self.vdog_client_path = str(
+            self._resolve_vdog_client_path(os.environ.get("OCTOPLANT_VDOG_CLIENT_PATH", ""))
+        )
 
         self._token: Optional[str] = None
 
@@ -138,6 +156,45 @@ class OctoplantClient:
 
     def _auth_headers(self, token: str) -> dict[str, str]:
         return {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+
+    @staticmethod
+    def _resolve_existing_file(path_value: str, base_dir: Path) -> Path:
+        candidate = Path(os.path.expandvars(path_value.strip())).expanduser()
+        if not candidate.is_absolute():
+            candidate = (base_dir / candidate).resolve()
+        return candidate
+
+    def _resolve_vdog_client_path(self, configured: str) -> Path:
+        if configured.strip():
+            candidate = Path(os.path.expandvars(configured.strip())).expanduser()
+            if not candidate.is_absolute():
+                candidate = (_PROJECT_ROOT / candidate).resolve()
+            if (candidate / "VDogAutoExport.exe").exists():
+                return candidate
+            raise OctoplantConfigError(
+                "VDogAutoExport.exe niet gevonden in OCTOPLANT_VDOG_CLIENT_PATH."
+            )
+
+        checkout_exe_dir = Path(self._vdogcheckout_exe).resolve().parent
+        if (checkout_exe_dir / "VDogAutoExport.exe").exists():
+            return checkout_exe_dir
+
+        for candidate in _VDOG_CLIENT_CANDIDATES:
+            if (candidate / "VDogAutoExport.exe").exists():
+                return candidate
+
+        path_dirs = os.environ.get("PATH", "").split(os.pathsep)
+        for path_dir in path_dirs:
+            if not path_dir:
+                continue
+            candidate = Path(path_dir).expanduser()
+            if (candidate / "VDogAutoExport.exe").exists():
+                return candidate
+
+        raise OctoplantConfigError(
+            "VDogAutoExport.exe niet gevonden via auto-discover. "
+            "Stel OCTOPLANT_VDOG_CLIENT_PATH in .env in."
+        )
 
     # ------------------------------------------------------------------
     # Check-Out (via VDogCheckOut.exe)

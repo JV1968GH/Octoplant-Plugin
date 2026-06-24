@@ -24,7 +24,8 @@ VDogAutoExport.exe
 
 ## Executable locatie
 
-Geconfigureerd via `OCTOPLANT_VDOG_CLIENT_PATH` in `.env`.
+Automatisch gevonden via standaard installatiemap of `PATH`.
+Optioneel te overriden via `OCTOPLANT_VDOG_CLIENT_PATH` in `.env`.
 
 ## MCP-tool
 

@@ -23,6 +23,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$CondaExe = $null
 
 function Write-Step([string]$msg) {
     Write-Host ""
@@ -43,29 +44,51 @@ function Abort([string]$msg) {
     exit 1
 }
 
+function Find-CondaExe {
+    $cmd = Get-Command conda -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+
+    $candidates = @(
+        "$env:USERPROFILE\anaconda3\Scripts\conda.exe",
+        "$env:USERPROFILE\miniconda3\Scripts\conda.exe",
+        "$env:USERPROFILE\AppData\Local\anaconda3\Scripts\conda.exe",
+        "$env:USERPROFILE\AppData\Local\miniconda3\Scripts\conda.exe",
+        "C:\ProgramData\anaconda3\Scripts\conda.exe",
+        "C:\ProgramData\miniconda3\Scripts\conda.exe",
+        "C:\tools\anaconda3\Scripts\conda.exe",
+        "C:\tools\miniconda3\Scripts\conda.exe"
+    )
+
+    foreach ($candidate in $candidates) {
+        if (Test-Path $candidate) { return $candidate }
+    }
+
+    return $null
+}
+
 # --- 1. Conda ---
 Write-Step "Conda controleren"
-$condaCmd = Get-Command conda -ErrorAction SilentlyContinue
-if (-not $condaCmd) {
+$CondaExe = Find-CondaExe
+if (-not $CondaExe) {
     Abort "conda niet gevonden in PATH.`nInstalleer Anaconda of Miniconda en herstart dit script."
 }
-Write-OK "conda gevonden: $($condaCmd.Source)"
+Write-OK "conda gevonden: $CondaExe"
 
 # --- 2. Conda omgeving ---
 Write-Step "Conda omgeving 'mcp-op' controleren"
-$envExists = conda env list 2>$null | Select-String "mcp-op"
+$envExists = & $CondaExe env list 2>$null | Select-String "mcp-op"
 if ($envExists) {
     Write-OK "Omgeving 'mcp-op' bestaat al."
 } else {
     Write-Host "    Aanmaken..." -ForegroundColor Gray
-    conda create -n mcp-op python=3.12 -y
+    & $CondaExe create -n mcp-op python=3.12 -y
     if ($LASTEXITCODE -ne 0) { Abort "Aanmaken conda omgeving mislukt." }
     Write-OK "Omgeving 'mcp-op' aangemaakt."
 }
 
 # --- 3. Python dependencies ---
 Write-Step "Python-dependencies installeren"
-conda run -n mcp-op pip install -e "$Root" --quiet
+& $CondaExe run -n mcp-op pip install -e "$Root" --quiet
 if ($LASTEXITCODE -ne 0) { Abort "pip install mislukt." }
 Write-OK "Dependencies geinstalleerd."
 
@@ -104,7 +127,7 @@ if (Test-Path $envFile) {
     Write-Warn "Pas .env aan met de correcte waarden voor dit toestel:"
     Write-Warn "  - OCTOPLANT_SERVER"
     Write-Warn "  - OCTOPLANT_ARCHIVE_PATH"
-    Write-Warn "  - OCTOPLANT_VDOG_CLIENT_PATH"
+    Write-Warn "  - OCTOPLANT_VDOG_CLIENT_PATH (alleen indien auto-discover niet werkt)"
 }
 
 # --- Klaar ---

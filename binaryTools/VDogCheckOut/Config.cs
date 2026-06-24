@@ -29,7 +29,7 @@ internal static class ConfigLoader
     ///   access-rights.db -- pad via ACCESS_RIGHTS_DB_PATH in .env,
     ///                       of automatisch gevonden als sibling van de workspace
     ///   VdogClientPath   -- OCTOPLANT_VDOG_CLIENT_PATH in .env,
-    ///                       anders naast de lopende exe
+    ///                       anders auto-discover (exe-map, gangbare installatiemap, PATH)
     ///   app-naam         -- ACCESS_RIGHTS_APP_NAME in .env (standaard: Octoplant)
     /// </summary>
     public static AppConfig Load(string? envPath = null)
@@ -54,26 +54,9 @@ internal static class ConfigLoader
             ? dbDomain
             : env.GetValueOrDefault("OCTOPLANT_DOMAIN", "");
 
-        string vdogClientPath;
-        if (env.TryGetValue("OCTOPLANT_VDOG_CLIENT_PATH", out var cfgVdog)
-            && !string.IsNullOrWhiteSpace(cfgVdog))
-        {
-            vdogClientPath = cfgVdog;
-        }
-        else
-        {
-            var exeDir = AppContext.BaseDirectory;
-            if (File.Exists(Path.Combine(exeDir, "VDogAutoCheckOut.exe")))
-                vdogClientPath = exeDir;
-            else
-                throw new ConfigException(
-                    "OCTOPLANT_VDOG_CLIENT_PATH is niet ingesteld in .env\n" +
-                    "en VDogAutoCheckOut.exe is niet gevonden naast de exe.\n" +
-                    "Stel OCTOPLANT_VDOG_CLIENT_PATH in .env in of kopieer\n" +
-                    "VDogAutoCheckOut.exe naar dezelfde map als VDogCheckOut.exe.");
-        }
+        var vdogClientPath = ResolveVdogClientPath(env, projectRoot);
 
-        var archivePath = GetRequired(env, "OCTOPLANT_ARCHIVE_PATH");
+        var archivePath = ResolvePath(GetRequired(env, "OCTOPLANT_ARCHIVE_PATH"), projectRoot);
         var server      = env.GetValueOrDefault("OCTOPLANT_SERVER", "");
         var sslVerify   = !string.Equals(
             env.GetValueOrDefault("OCTOPLANT_SSL_VERIFY", "true"),
@@ -81,7 +64,7 @@ internal static class ConfigLoader
 
         var checkoutPath = env.TryGetValue("OCTOPLANT_CHECKOUT_PATH", out var cp)
                            && !string.IsNullOrWhiteSpace(cp)
-            ? cp
+            ? ResolvePath(cp, projectRoot)
             : Path.Combine(projectRoot, "octoPlantCheckouts");
 
         return new AppConfig(
@@ -122,9 +105,7 @@ internal static class ConfigLoader
         if (env.TryGetValue("ACCESS_RIGHTS_DB_PATH", out var cfgDb)
             && !string.IsNullOrWhiteSpace(cfgDb))
         {
-            var resolved = Path.IsPathRooted(cfgDb)
-                ? cfgDb
-                : Path.GetFullPath(Path.Combine(projectRoot, cfgDb));
+            var resolved = ResolvePath(cfgDb, projectRoot);
             if (File.Exists(resolved)) return resolved;
             throw new ConfigException(
                 $"access-rights database niet gevonden op geconfigureerd pad:\n  {resolved}\n" +
@@ -147,6 +128,50 @@ internal static class ConfigLoader
             "AccessRightsManager map naast de workspace.\n\n" +
             "Gezochte locaties:\n" +
             string.Join("\n", candidates.Select(c => "  " + c)));
+    }
+
+    private static string ResolveVdogClientPath(Dictionary<string, string> env, string projectRoot)
+    {
+        if (env.TryGetValue("OCTOPLANT_VDOG_CLIENT_PATH", out var cfgVdog)
+            && !string.IsNullOrWhiteSpace(cfgVdog))
+        {
+            var configured = ResolvePath(cfgVdog, projectRoot);
+            if (File.Exists(Path.Combine(configured, "VDogAutoCheckOut.exe")))
+                return configured;
+            throw new ConfigException(
+                $"VDogAutoCheckOut.exe niet gevonden in OCTOPLANT_VDOG_CLIENT_PATH:\n  {configured}");
+        }
+
+        var exeDir = AppContext.BaseDirectory;
+        var candidates = new List<string>
+        {
+            exeDir,
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "vdogClient"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "vdogClient"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "vdogClient"),
+        };
+
+        var pathVar = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        foreach (var part in pathVar.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+            candidates.Add(part.Trim());
+
+        foreach (var candidate in candidates.Where(c => !string.IsNullOrWhiteSpace(c)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var full = Path.GetFullPath(candidate);
+                if (File.Exists(Path.Combine(full, "VDogAutoCheckOut.exe")))
+                    return full;
+            }
+            catch
+            {
+                // Ongeldig PATH-fragment negeren.
+            }
+        }
+
+        throw new ConfigException(
+            "VDogAutoCheckOut.exe niet gevonden via auto-discover.\n" +
+            "Stel OCTOPLANT_VDOG_CLIENT_PATH in .env in indien de tool op een niet-standaardlocatie staat.");
     }
 
     private static (string UserName, string Domain, string Password) LoadCredentialsFromDb(
@@ -219,6 +244,14 @@ internal static class ConfigLoader
             if (!string.IsNullOrEmpty(key)) result[key] = value;
         }
         return result;
+    }
+
+    private static string ResolvePath(string value, string projectRoot)
+    {
+        var expanded = Environment.ExpandEnvironmentVariables(value.Trim());
+        return Path.IsPathRooted(expanded)
+            ? Path.GetFullPath(expanded)
+            : Path.GetFullPath(Path.Combine(projectRoot, expanded));
     }
 
     private static string GetRequired(Dictionary<string, string> env, string key)
