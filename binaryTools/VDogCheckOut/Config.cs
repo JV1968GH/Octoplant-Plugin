@@ -118,9 +118,9 @@ internal static class ConfigLoader
 
         var candidates = new[]
         {
-            // User-level standaardlocatie (portable over toestellen/users)
-            Path.Combine(localAppData, "Octoplant", "access-rights.db"),
-            Path.Combine(appData,      "Octoplant", "access-rights.db"),
+            // Gedeelde user-level locatie voor alle AI-plugins (portable over toestellen/users)
+            Path.Combine(localAppData, "AIPlugins", "access-rights.db"),
+            Path.Combine(appData,      "AIPlugins", "access-rights.db"),
             // Sibling van de workspace (backwards compatibility)
             Path.Combine(workspaceParent, "AccessRightsManager", "publish", "access-rights.db"),
             Path.Combine(workspaceParent, "AccessRightsManager", "access-rights.db"),
