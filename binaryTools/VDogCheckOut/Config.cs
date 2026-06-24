@@ -112,9 +112,16 @@ internal static class ConfigLoader
                 "Controleer ACCESS_RIGHTS_DB_PATH in .env.");
         }
 
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var appData      = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var workspaceParent = Path.GetDirectoryName(projectRoot) ?? projectRoot;
+
         var candidates = new[]
         {
+            // User-level standaardlocatie (portable over toestellen/users)
+            Path.Combine(localAppData, "Octoplant", "access-rights.db"),
+            Path.Combine(appData,      "Octoplant", "access-rights.db"),
+            // Sibling van de workspace (backwards compatibility)
             Path.Combine(workspaceParent, "AccessRightsManager", "publish", "access-rights.db"),
             Path.Combine(workspaceParent, "AccessRightsManager", "access-rights.db"),
         };
@@ -124,8 +131,7 @@ internal static class ConfigLoader
 
         throw new ConfigException(
             "access-rights database niet gevonden.\n" +
-            "Stel ACCESS_RIGHTS_DB_PATH in .env in of zet access-rights.db in de\n" +
-            "AccessRightsManager map naast de workspace.\n\n" +
+            "Stel ACCESS_RIGHTS_DB_PATH in .env in (bijv. %LOCALAPPDATA%\\Octoplant\\access-rights.db).\n\n" +
             "Gezochte locaties:\n" +
             string.Join("\n", candidates.Select(c => "  " + c)));
     }
