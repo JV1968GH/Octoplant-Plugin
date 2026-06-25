@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "octoplant": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["server.py"],
+      "env": {
+        "PYTHONPATH": "."
+      }
+    }
+  }
+}

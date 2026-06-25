@@ -1,0 +1,14 @@
+{
+  "name": "octoplant",
+  "description": "MCP plugin for read-only access to OctoPlant/versiondog: checkout components and export project data",
+  "version": "0.1.0",
+  "author": {
+    "name": "JV1968GH",
+    "email": "admin@octoplant.local"
+  },
+  "license": "MIT",
+  "keywords": ["octoplant", "versiondog", "checkout", "export", "mcp"],
+  "skills": ["skills/"],
+  "mcpServers": ".mcp.json",
+  "icon": "assets/Octoplant.png"
+}
