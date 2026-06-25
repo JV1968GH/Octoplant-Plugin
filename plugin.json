@@ -1,6 +1,6 @@
 {
   "name": "octoplant",
-  "description": "MCP plugin for read-only access to OctoPlant/versiondog: checkout components and export project data",
+  "description": "Check-outs en Check-ins from Octoplant",
   "version": "0.1.0",
   "author": {
     "name": "JV1968GH",
