@@ -1,14 +1,22 @@
 {
   "name": "octoplant",
   "description": "Check-outs en Check-ins vanuit Octoplant",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "JV1968GH",
     "email": "admin@octoplant.local"
   },
   "license": "MIT",
-  "keywords": ["octoplant", "versiondog", "checkout", "export", "mcp"],
-  "skills": ["skills/"],
+  "keywords": [
+    "octoplant",
+    "versiondog",
+    "checkout",
+    "export",
+    "mcp"
+  ],
+  "skills": [
+    ".github/skills/"
+  ],
   "mcpServers": ".mcp.json",
   "icon": "assets/Octoplant.png"
 }

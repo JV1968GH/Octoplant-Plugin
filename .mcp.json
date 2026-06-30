@@ -2,11 +2,11 @@
   "mcpServers": {
     "octoplant": {
       "type": "stdio",
-      "command": "python",
-      "args": ["server.py"],
-      "env": {
-        "PYTHONPATH": "."
-      }
+      "command": "cmd",
+      "args": [
+        "/c",
+        "${PLUGIN_ROOT}\\\\scripts\\\\start-mcp.cmd"
+      ]
     }
   }
 }
