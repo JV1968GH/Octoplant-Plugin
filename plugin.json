@@ -1,7 +1,7 @@
 {
   "name": "octoplant",
   "description": "Check-outs en Check-ins vanuit Octoplant",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "JV1968GH",
     "email": "admin@octoplant.local"

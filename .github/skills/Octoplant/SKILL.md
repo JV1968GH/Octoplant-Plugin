@@ -1,5 +1,5 @@
-﻿---
-name: mcp-op
+---
+name: Octoplant
 description: "Octoplant MCP project kennis: OctoPlant/versiondog API (authenticatie, checkout, export), archiefstructuur & padresolutie (RWZI's, PS, kostplaats, PLC-nummer), MCP-tools scope, ontwikkelrichtlijnen en projectstructuur. Gebruik bij implementeren van authenticate, checkout_component, checkout_all, start_export, get_export_status, download_export, cancel_export, export_via_cli, OctoplantClient, of vragen over de REST API, VDogAutoCheckOut.exe, VDogAutoExport.exe, OAuth2 token endpoint, .env configuratie, mapstructuur of componentpad bepalen."
 ---
 

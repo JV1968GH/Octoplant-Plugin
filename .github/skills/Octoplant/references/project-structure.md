@@ -1,4 +1,4 @@
-﻿# Projectstructuur & Configuratie
+# Projectstructuur & Configuratie
 
 ## Mapstructuur
 
@@ -19,7 +19,7 @@ Octoplant-Plugin/
 │   └── mcp.json                # VS Code MCP-serverregistratie (portabel via ${workspaceFolder})
 ├── .github/
 │   └── skills/
-│       └── mcp-op/
+│       └── Octoplant/
 │           ├── SKILL.md        # Skill index
 │           └── references/     # Detaildocumentatie per functionaliteit
 ├── src/

@@ -7,7 +7,7 @@
 Deze repository is een **Octoplant plugin-workspace** met drie lagen:
 
 1. **Runtime-laag (Python)**: MCP-server en tool-implementaties in `server.py` en `src/`.
-2. **Kennislaag (skills)**: repo-skills in `.github/skills/mcp-op/`.
+2. **Kennislaag (skills)**: repo-skills in `.github/skills/Octoplant/`.
 3. **Integratielaag (binaries)**: lokale wrappers en externe CLI-koppelingen in `binaryTools/`.
 
 Het doel blijft read-only toegang tot OctoPlant/versiondog (checkout + export) voor AI-workflows.
@@ -31,7 +31,7 @@ Het doel blijft read-only toegang tot OctoPlant/versiondog (checkout + export) v
 
 ## Bron van waarheid
 
-Detailkennis en technische afspraken staan in skill `mcp-op`:
+Detailkennis en technische afspraken staan in skill `Octoplant`:
 
-- `.github/skills/mcp-op/SKILL.md`
-- `.github/skills/mcp-op/references/*.md`
+- `.github/skills/Octoplant/SKILL.md`
+- `.github/skills/Octoplant/references/*.md`
