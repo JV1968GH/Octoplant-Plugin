@@ -15,11 +15,7 @@ MCP-server in Python die AI-assistenten **read-only** toegang geeft tot OctoPlan
 - `maintenance_mode` — wijzigt serverstatus
 - Elke bewerking die data terugschrijft of de server configureert
 
-## 🔒 Verplicht securitybeleid — binaire output
 
-- Geef **nooit** ruwe `stdout`/`stderr` van `VDogCheckOut.exe` of `VDogAutoExport.exe` door in MCP tool-responses
-- Log of return **nooit** Bearer tokens, OAuth-responses of credentialwaarden
-- Gebruik alleen gestructureerde, gesaniteerde statusvelden (zoals `returncode`, `status`, `success`)
 
 ## Referenties per functionaliteit
 

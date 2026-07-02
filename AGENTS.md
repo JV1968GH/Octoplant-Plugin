@@ -1,6 +1,8 @@
 # AGENTS.md — Octoplant plugin (MCP + skills + binary integration)
 
+## CyberSecurity Guidelines
 
+Volg bij elke prompt altijd de instructies in ..\\..\PrimeDirective.md.
 
 ## Plugincontext
 
