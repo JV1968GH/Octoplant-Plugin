@@ -49,6 +49,8 @@ OCTOPLANT_ARCHIVE_PATH=D:\vdClientArchive
 # Optioneel; leeg laten gebruikt auto-discover
 OCTOPLANT_VDOG_CLIENT_PATH=
 OCTOPLANT_SSL_VERIFY=false
+# Configureerbaar pad naar credentials-database (default)
+ACCESS_RIGHTS_DB_PATH=%LOCALAPPDATA%\Programs\AccessRightsManager\access-rights.db
 ```
 
 > Gebruikersnaam en wachtwoord staan **niet** in `.env`.

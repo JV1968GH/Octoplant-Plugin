@@ -83,6 +83,7 @@ OCTOPLANT_SSL_VERIFY=false
 | `OCTOPLANT_CHECKOUT_PATH` | Workspace mirror-bestemming (standaard `{projectroot}\octoPlantCheckouts`) |
 | `OCTOPLANT_VDOG_CLIENT_PATH` | Optioneel pad naar map met `VDogAutoCheckOut.exe` en `VDogAutoExport.exe` (auto-discover indien leeg) |
 | `OCTOPLANT_SSL_VERIFY` | `true`/`false` voor SSL-certificaatvalidatie |
+| `ACCESS_RIGHTS_DB_PATH` | Pad naar credentials database (standaard `%LOCALAPPDATA%\Programs\AccessRightsManager\access-rights.db`) |
 
 > Gebruikersnaam en wachtwoord zijn **niet** aanwezig in `.env` en worden nooit
 > blootgesteld aan het MCP-protocol of de AI. Ze worden intern beheerd door

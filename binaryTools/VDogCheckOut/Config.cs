@@ -26,8 +26,9 @@ internal static class ConfigLoader
     /// Laad configuratie. Alle paden worden RELATIEF bepaald:
     ///
     ///   .env             -- walk-up vanaf CWD
-    ///   access-rights.db -- pad via ACCESS_RIGHTS_DB_PATH in .env,
-    ///                       of automatisch gevonden als sibling van de workspace
+    ///   access-rights.db -- pad via ACCESS_RIGHTS_DB_PATH in .env
+    ///                       (default: %LOCALAPPDATA%\Programs\AccessRightsManager\access-rights.db)
+    ///                       of via legacy auto-discover locaties
     ///   VdogClientPath   -- OCTOPLANT_VDOG_CLIENT_PATH in .env,
     ///                       anders auto-discover (exe-map, gangbare installatiemap, PATH)
     ///   app-naam         -- ACCESS_RIGHTS_APP_NAME in .env (standaard: Octoplant)
@@ -102,6 +103,10 @@ internal static class ConfigLoader
 
     private static string ResolveDbPath(Dictionary<string, string> env, string projectRoot)
     {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var defaultDbPath = Path.Combine(
+            localAppData, "Programs", "AccessRightsManager", "access-rights.db");
+
         if (env.TryGetValue("ACCESS_RIGHTS_DB_PATH", out var cfgDb)
             && !string.IsNullOrWhiteSpace(cfgDb))
         {
@@ -112,16 +117,17 @@ internal static class ConfigLoader
                 "Controleer ACCESS_RIGHTS_DB_PATH in .env.");
         }
 
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var appData      = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var workspaceParent = Path.GetDirectoryName(projectRoot) ?? projectRoot;
 
         var candidates = new[]
         {
-            // Gedeelde user-level locatie voor alle AI-plugins (portable over toestellen/users)
+            // Standaardlocatie van AccessRightsManager.
+            defaultDbPath,
+            // Legacy locaties voor backwards compatibility.
             Path.Combine(localAppData, "AIPlugins", "access-rights.db"),
             Path.Combine(appData,      "AIPlugins", "access-rights.db"),
-            // Sibling van de workspace (backwards compatibility)
+            // Sibling van de workspace.
             Path.Combine(workspaceParent, "AccessRightsManager", "publish", "access-rights.db"),
             Path.Combine(workspaceParent, "AccessRightsManager", "access-rights.db"),
         };
@@ -131,7 +137,7 @@ internal static class ConfigLoader
 
         throw new ConfigException(
             "access-rights database niet gevonden.\n" +
-            "Stel ACCESS_RIGHTS_DB_PATH in .env in (bijv. %LOCALAPPDATA%\\Octoplant\\access-rights.db).\n\n" +
+            "Stel ACCESS_RIGHTS_DB_PATH in .env in (standaard: %LOCALAPPDATA%\\Programs\\AccessRightsManager\\access-rights.db).\n\n" +
             "Gezochte locaties:\n" +
             string.Join("\n", candidates.Select(c => "  " + c)));
     }
