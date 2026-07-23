@@ -16,6 +16,7 @@ src/__pycache__
 
 # Configuratie (machine-specifiek)
 .env
+.env*
 
 # Lokale, read-only uitgecheckte projectkopieën
 octoPlantCheckouts/
