@@ -1,0 +1,22 @@
+{
+  "name": "octoplant",
+  "description": "Read-only OctoPlant/versiondog projectnavigatie, checkout en CLI-export",
+  "version": "0.4.0",
+  "author": {
+    "name": "JV1968GH",
+    "email": "admin@octoplant.local"
+  },
+  "license": "MIT",
+  "keywords": [
+    "octoplant",
+    "versiondog",
+    "checkout",
+    "export",
+    "mcp"
+  ],
+  "skills": [
+    ".github/skills/"
+  ],
+  "mcpServers": ".mcp.json",
+  "icon": "assets/Octoplant.png"
+}

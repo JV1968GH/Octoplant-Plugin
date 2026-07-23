@@ -8,7 +8,7 @@
     2. Maakt de conda omgeving "mcp-op" aan (of updatet die)
     3. Installeert Python-dependencies
     4. Bouwt VDogCheckOut.exe (.NET)
-    5. Maakt .env aan vanuit .env.example (als nog niet aanwezig)
+    5. Maakt een leeg .env-bestand aan (als nog niet aanwezig)
 
 .NOTES
     Vereisten:
@@ -118,15 +118,15 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
 # --- 5. .env aanmaken ---
 Write-Step ".env configuratie"
 $envFile  = Join-Path $Root ".env"
-$envExample = Join-Path $Root ".env.example"
 if (Test-Path $envFile) {
     Write-OK ".env bestaat al (niet overschreven)."
 } else {
-    Copy-Item $envExample $envFile
-    Write-Warn ".env aangemaakt vanuit .env.example."
+    New-Item -ItemType File -Path $envFile | Out-Null
+    Write-Warn "Leeg .env-bestand aangemaakt."
     Write-Warn "Pas .env aan met de correcte waarden voor dit toestel:"
     Write-Warn "  - OCTOPLANT_SERVER"
     Write-Warn "  - OCTOPLANT_ARCHIVE_PATH"
+    Write-Warn "  - OCTOPLANT_SERVER_ARCHIVE_PATH (optioneel; gedeelde read-only archive)"
     Write-Warn "  - OCTOPLANT_VDOG_CLIENT_PATH (alleen indien auto-discover niet werkt)"
 }
 

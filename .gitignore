@@ -17,6 +17,9 @@ src/__pycache__
 # Configuratie (machine-specifiek)
 .env
 
+# Lokale, read-only uitgecheckte projectkopieën
+octoPlantCheckouts/
+
 # Python build-artefacten
 *.egg-info/
 dist/

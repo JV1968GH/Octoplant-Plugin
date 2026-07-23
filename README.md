@@ -3,6 +3,8 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: componenten uitchecken en projectdata exporteren.
 
+**Release:** 0.4.0
+
 > **Scope:** uitsluitend check-out en export. Check-in en maintenance mode zijn bewust uitgesloten.
 
 ---
@@ -37,7 +39,7 @@ Dit script:
 - Maakt de conda-omgeving `mcp-op` aan (Python 3.12)
 - Installeert alle Python-dependencies
 - Bouwt `VDogCheckOut.exe` (.NET, self-contained)
-- Maakt `.env` aan vanuit `.env.example`
+- Maakt een leeg `.env`-bestand aan als dat nog niet bestaat
 
 ### Stap 3 — `.env` aanpassen
 
@@ -46,6 +48,7 @@ Open `.env` en vul de waarden in voor dit toestel:
 ```ini
 OCTOPLANT_SERVER=https://jouw-server:64023
 OCTOPLANT_ARCHIVE_PATH=D:\vdClientArchive
+OCTOPLANT_SERVER_ARCHIVE_PATH=\\pOctoplan1\poctoplan1_D\vdServerArchive
 # Optioneel; leeg laten gebruikt auto-discover
 OCTOPLANT_VDOG_CLIENT_PATH=
 OCTOPLANT_SSL_VERIFY=false
@@ -106,7 +109,7 @@ Check een specifiek PLC-component of project uit vanuit OctoPlant.
 
 ```
 checkout_component(
-    component_path = "\RWZI's\100026 - Dendermonde\100026 - Dendermonde, PLC08_CE"
+    component_path = "\RWZI's\{installatiemap}\{PLC-project}"
 )
 ```
 
@@ -133,56 +136,23 @@ checkout_all()
 checkout_all(with_backups=true)
 ```
 
-### `start_export`
-Start een asynchrone export-order op de OctoPlant server.
+### `resolve_project`
+Roep deze tool aan bij de start van elke OctoPlant-sessie, vóór een CLI-export
+of check-out. Hij leest de gedeelde serverarchive telkens opnieuw, gebruikt
+standaard `RWZI's`, en zoekt in `ARCHIVE` naar het beste PLC-project.
 
 ```
-start_export(export_types=["projectTree", "componentLog"])
-→ { name: "order-xyz", ... }
+resolve_project(cost_center="100026", plc_name="PLC08")
+→ {
+    component_path: "\RWZI's\{installatiemap}\{PLC-project}",
+    archive_relative_path: "\RWZI's\{installatiemap}\ARCHIVE\{PLC-project}"
+}
 ```
 
-Beschikbare exporttypen: `projectTree`, `jobList`, `jobResults`, `usersAndGroups`,
-`componentTypes`, `componentLog`, `eventLog`, `adminLog`, `linkedLibraries`, `usageInfo`
-
-### `get_export_status`
-Vraag de status op van een lopende export.
-
-```
-get_export_status(order_name="order-xyz")
-→ { done: false, metadata: { state: "STATE_RUNNING" } }
-```
-
-### `download_export`
-Download een afgeronde export als ZIP-bestand.
-
-```
-download_export(order_name="order-xyz")
-download_export(order_name="order-xyz", output_path="C:\exports\mijn_export.zip")
-→ "C:\exports\octoplant_export_order-xyz.zip"
-```
-
-### `run_export`
-Start + poll + download in één stap (meest praktisch voor dagelijks gebruik).
-
-```
-run_export(export_types=["projectTree"])
-run_export(export_types=["projectTree", "eventLog"], timeout_seconds=120)
-→ "C:\exports\octoplant_export_order-xyz.zip"
-```
-
-| Parameter | Standaard | Beschrijving |
-|-----------|-----------|-------------|
-| `export_types` | — | Lijst exporttypen (verplicht) |
-| `output_path` | automatisch | Doelpad ZIP-bestand |
-| `poll_interval_seconds` | 2.0 | Wachttijd tussen statuscontroles |
-| `timeout_seconds` | 300.0 | Maximale wachttijd |
-
-### `cancel_export`
-Annuleer een wachtende of lopende export.
-
-```
-cancel_export(order_name="order-xyz")
-```
+Een installatienaam en/of kostenplaats volstaat. Bij meerdere kandidaten heeft
+`_CE` voorrang; daarna wordt de recentste versie geselecteerd. Gebruik
+`component_path` met `checkout_component`; `archive_relative_path` is alleen
+voor een INI-veld dat expliciet een filesystempad verwacht.
 
 ### `export_via_cli`
 Export uitvoeren via `VDogAutoExport.exe` met een bestaand INI-parameterbestand.
@@ -192,32 +162,22 @@ export_via_cli(ini_file_path="C:\exports\mijn_export.ini")
 → { success: true, returncode: 0 }
 ```
 
+De REST-projectboomexport is niet beschikbaar wegens licentiebeperkingen.
+Gebruik altijd eerst `resolve_project` en gebruik enkel het padtype dat bij
+het betreffende veld van de bestaande INI-configuratie hoort.
+
 ---
 
 ## Archiefstructuur — padopbouw
 
 ```
-\RWZI's\{kostplaats} - {naam}\{kostplaats} - {naam}, PLC{##}_CE
-\PS\{kostplaats} - {naam}\{kostplaats} - {naam}, PLC{##}_CE
+\RWZI's\{actuele installatiemap}\ARCHIVE\{actueel PLC-project}
+\PS\{actuele installatiemap}\ARCHIVE\{actueel PLC-project}
 ```
 
-Bekende installaties:
-
-| Kostplaats | Naam | Type |
-|------------|------|------|
-| 100020 | Gent | RWZI |
-| 100026 | Dendermonde | RWZI |
-| 100078 | Dessel | RWZI |
-| 100114 | Overpelt | RWZI |
-| 100138 | Achel | RWZI |
-
-Voorbeeldpaden:
-
-| Gewenst | Pad |
-|---------|-----|
-| Dendermonde PLC08 | `\RWZI's\100026 - Dendermonde\100026 - Dendermonde, PLC08_CE` |
-| Gent PLC01 | `\RWZI's\100020 - Gent\100020 - Gent, PLC01_CE` |
-| Achel PLC02 (PS) | `\PS\100138 - Achel\100138 - Achel, PLC02_CE` |
+De gedeelde archive is de bron van waarheid. Gebruik daarom nooit bekende
+installatie- of voorbeeldpaden als invoer voor een export: roep eerst
+`resolve_project` aan.
 
 ---
 
@@ -230,6 +190,8 @@ Uitgecheckte bestanden worden gespiegeld naar:
 ```
 
 Configureerbaar via `OCTOPLANT_CHECKOUT_PATH` in `.env`.
+Laat deze variabele leeg om de dedicatede workspace-map
+`octoPlantCheckouts` te gebruiken.
 
 ---
 
@@ -248,17 +210,17 @@ Configureerbaar via `OCTOPLANT_CHECKOUT_PATH` in `.env`.
 ```
 Octoplant-Plugin/
 ├── server.py                    # MCP-server entry point
-├── .env.example                 # Configuratiesjabloon (kopieer naar .env)
+├── .env                         # Lokale, niet-geversioneerde configuratie
 ├── pyproject.toml               # Python-dependencies
 ├── scripts/
 │   ├── install.ps1              # Eenmalig installatiescript
 │   └── start-mcp.cmd            # Portable launcher (gebruikt door VS Code)
 ├── src/
-│   ├── client.py                # OctoplantClient (REST + CLI, geen credentials)
+│   ├── client.py                # OctoplantClient (archive-scan + CLI, geen credentials)
+│   ├── navigation.py            # Read-only resolver voor de serverarchive
 │   ├── tools/
 │   │   ├── checkout.py          # checkout_component, checkout_all
-│   │   └── export.py            # start_export, get_export_status, download_export,
-│   │                            # cancel_export, run_export, export_via_cli
+│   │   └── export.py            # resolve_project, export_via_cli
 │   └── models/
 │       └── octoplant.py         # Pydantic-modellen
 ├── binaryTools/

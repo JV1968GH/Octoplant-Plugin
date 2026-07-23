@@ -2,8 +2,8 @@
 
 Verantwoordelijk voor:
 - Bearer-token ophalen via VDogCheckOut.exe (credentials intern in de exe)
-- REST API-aanroepen (Export API via httpx)
 - CLI subprocess-aanroepen (VDogCheckOut.exe checkout, VDogAutoExport.exe)
+- Read-only navigatie in de gedeelde serverarchive
 
 SCOPE: uitsluitend lees- en exportbewerkingen. Geen check-in, geen maintenance mode.
 
@@ -17,7 +17,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
-import httpx
+from src.navigation import DEFAULT_SERVER_ARCHIVE_PATH, ServerArchiveNavigator
 
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -46,26 +46,6 @@ class OctoplantConfigError(RuntimeError):
     """Wordt gegooid wanneer verplichte configuratie ontbreekt."""
 
 
-class OctoplantApiError(RuntimeError):
-    """HTTP-fout van de OctoPlant API — gesanitiseerd, geen server-URL of body."""
-
-    def __init__(self, status_code: int) -> None:
-        super().__init__(f"OctoPlant API-fout (HTTP {status_code})")
-        self.status_code = status_code
-
-
-def _raise_sanitised(resp: httpx.Response) -> None:
-    """Gooi OctoplantApiError als de response niet succesvol is.
-    Vervangt raise_for_status() om te voorkomen dat server-URL of response-body
-    in de exception-message lekt naar de LLM.
-    """
-    if not resp.is_success:
-        raise OctoplantApiError(resp.status_code)
-
-
-
-
-
 class OctoplantClient:
     """Client voor OctoPlant/versiondog -- alleen lezen en exporteren."""
 
@@ -87,11 +67,15 @@ class OctoplantClient:
             os.environ.get("OCTOPLANT_SSL_VERIFY", "true").lower() != "false"
         )
         self.export_path: str = os.environ.get("OCTOPLANT_EXPORT_PATH", "")
+        self.server_archive_path: str = os.environ.get(
+            "OCTOPLANT_SERVER_ARCHIVE_PATH", DEFAULT_SERVER_ARCHIVE_PATH
+        )
 
         _default_checkout = str(_PROJECT_ROOT / "octoPlantCheckouts")
         self.checkout_path: str = (
             os.environ.get("OCTOPLANT_CHECKOUT_PATH") or _default_checkout
         )
+        self._ensure_server_archive_is_read_only_source()
 
         # VDogCheckOut.exe: env override of auto-discover naast project
         _exe_override = os.environ.get("VDOGCHECKOUT_EXE", "")
@@ -112,6 +96,35 @@ class OctoplantClient:
         )
 
         self._token: Optional[str] = None
+        self._navigator = ServerArchiveNavigator(self.server_archive_path)
+
+    def _ensure_server_archive_is_read_only_source(self) -> None:
+        """Reject configurations that could make the shared archive writable."""
+        server_archive = os.path.normcase(os.path.normpath(self.server_archive_path))
+        writable_paths = (self.archive_path, self.checkout_path)
+        if any(
+            server_archive == os.path.normcase(os.path.normpath(path))
+            for path in writable_paths
+        ):
+            raise OctoplantConfigError(
+                "OCTOPLANT_SERVER_ARCHIVE_PATH mag niet als lokale archive- "
+                "of checkoutbestemming worden gebruikt."
+            )
+
+    def resolve_project(
+        self,
+        installation_name: Optional[str] = None,
+        cost_center: Optional[str] = None,
+        plc_name: Optional[str] = None,
+        root_name: Optional[str] = None,
+    ) -> dict[str, str]:
+        """Resolve a PLC project by reading the shared server archive."""
+        return self._navigator.resolve(
+            installation_name=installation_name,
+            cost_center=cost_center,
+            plc_name=plc_name,
+            root_name=root_name,
+        ).as_dict()
 
     # ------------------------------------------------------------------
     # Authenticatie -- token via VDogCheckOut.exe
@@ -263,71 +276,6 @@ class OctoplantClient:
             "stderr": "",
             "binary_output_suppressed": True,
         }
-
-    # ------------------------------------------------------------------
-    # Export REST API
-    # ------------------------------------------------------------------
-
-    async def start_export(self, export_contents: dict[str, Any]) -> dict[str, Any]:
-        """Dien een export-order in via POST /v1/order."""
-        token = await self.get_token()
-        async with httpx.AsyncClient(verify=self.ssl_verify) as http:
-            resp = await http.post(
-                f"{self.server}/v1/order",
-                json={"exportContents": export_contents},
-                headers=self._auth_headers(token),
-            )
-            if resp.status_code == 401:
-                self.invalidate_token()
-            _raise_sanitised(resp)
-            return resp.json()
-
-    async def get_export_status(self, order_name: str) -> dict[str, Any]:
-        """Vraag de status van een export-order op via GET /v1/order/{name}."""
-        token = await self.get_token()
-        async with httpx.AsyncClient(verify=self.ssl_verify) as http:
-            resp = await http.get(
-                f"{self.server}/v1/order/{order_name}",
-                headers=self._auth_headers(token),
-            )
-            if resp.status_code == 401:
-                self.invalidate_token()
-            _raise_sanitised(resp)
-            return resp.json()
-
-    async def download_export(self, order_name: str, output_path: str) -> str:
-        """Download een afgeronde export als ZIP via GET /v1/order/{name}/download."""
-        token = await self.get_token()
-        async with httpx.AsyncClient(verify=self.ssl_verify, timeout=120.0) as http:
-            resp = await http.get(
-                f"{self.server}/v1/order/{order_name}/download",
-                headers={
-                    **self._auth_headers(token),
-                    "Accept": "application/octet-stream",
-                },
-            )
-            if resp.status_code == 401:
-                self.invalidate_token()
-            _raise_sanitised(resp)
-
-        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-        with open(output_path, "wb") as f:
-            f.write(resp.content)
-
-        return os.path.abspath(output_path)
-
-    async def cancel_export(self, order_name: str) -> dict[str, Any]:
-        """Annuleer een lopende export-order via POST /v1/order/{name}/cancel."""
-        token = await self.get_token()
-        async with httpx.AsyncClient(verify=self.ssl_verify) as http:
-            resp = await http.post(
-                f"{self.server}/v1/order/{order_name}/cancel",
-                headers=self._auth_headers(token),
-            )
-            if resp.status_code == 401:
-                self.invalidate_token()
-            _raise_sanitised(resp)
-            return resp.json()
 
     # ------------------------------------------------------------------
     # Export via CLI (VDogAutoExport.exe)

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "octoplant": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "${PLUGIN_ROOT}\\scripts\\start-mcp.cmd"
+      ]
+    }
+  }
+}

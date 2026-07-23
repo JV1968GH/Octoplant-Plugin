@@ -1,41 +1,39 @@
-﻿---
+---
 name: mcp-op
-description: "Octoplant MCP project kennis: OctoPlant/versiondog API (authenticatie, checkout, export), archiefstructuur & padresolutie (RWZI's, PS, kostplaats, PLC-nummer), MCP-tools scope, ontwikkelrichtlijnen en projectstructuur. Gebruik bij implementeren van authenticate, checkout_component, checkout_all, start_export, get_export_status, download_export, cancel_export, export_via_cli, OctoplantClient, of vragen over de REST API, VDogAutoCheckOut.exe, VDogAutoExport.exe, OAuth2 token endpoint, .env configuratie, mapstructuur of componentpad bepalen."
+version: 0.4.0
+description: "OctoPlant/versiondog MCP-kennis voor read-only projectnavigatie in de gedeelde serverarchive en CLI-export. Gebruik voor installaties, kostenplaatsen, PLC-projecten, ARCHIVE, RWZI's, PS, resolve_project en VDogAutoExport.exe."
 ---
 
-# Octoplant — MCP Server voor OctoPlant / versiondog
+# Octoplant MCP
 
-MCP-server in Python die AI-assistenten **read-only** toegang geeft tot OctoPlant/versiondog.
+De plugin biedt uitsluitend read-only navigatie, check-out en CLI-export.
+Implementeer nooit check-in, maintenance mode of andere schrijfbewerkingen.
 
-> 📖 OctoPlant docs: https://info.octoplant.com/octoplant-info/public/en/main/
+## Gedeelde serverarchive: strikt read-only
 
-## ⛔ Strikte scope — NOOIT implementeren
+`\\pOctoplan1\poctoplan1_D\vdServerArchive` is uitsluitend een bron voor
+padresolutie. Maak, wijzig, verwijder, kopieer of spiegel nooit bestanden of
+mappen op deze share. Gebruik voor check-outs en bewerkingen uitsluitend de
+lokale clientarchive en `octoPlantCheckouts` in de sessieworkspace.
 
-- `checkin` / `check_in` — schrijft data terug
-- `maintenance_mode` — wijzigt serverstatus
-- Elke bewerking die data terugschrijft of de server configureert
+## Verplicht begin van elke OctoPlant-sessie
 
+Roep altijd eerst `resolve_project` aan voordat een PLC-project wordt
+uitgecheckt of via `VDogAutoExport.exe` wordt geëxporteerd. Geef een
+installatienaam en/of kostenplaats mee, samen met het PLC-nummer indien bekend.
+De tool leest bij elke oproep de actuele gedeelde serverarchive; gebruik dus
+geen hardgecodeerde of eerder onthouden mapnamen.
 
+Gebruik `component_path` voor `checkout_component`. Gebruik
+`archive_relative_path` alleen voor een bestaand INI-veld dat uitdrukkelijk
+een pad in de gedeelde filesystemarchive verwacht.
 
-## Referenties per functionaliteit
+## Referenties
 
 | Onderwerp | Bestand |
-|-----------|---------|
-| OAuth2 authenticatie (token endpoint, headers) | [authentication.md](./references/authentication.md) |
-| Check-Out via CLI (`VDogAutoCheckOut.exe`, return codes) | [checkout.md](./references/checkout.md) |
-| Archiefstructuur & padresolutie (RWZI's, PS, kostplaats, PLC) | [navigation.md](./references/navigation.md) |
-| Export via REST API (asynchroon, poll, download) | [export-api.md](./references/export-api.md) |
-| Export via CLI (`VDogAutoExport.exe`) | [export-cli.md](./references/export-cli.md) |
-| MCP-tools definitie (alle 8 tools) | [mcp-tools.md](./references/mcp-tools.md) |
-| Ontwikkelrichtlijnen & codestandaarden | [dev-guidelines.md](./references/dev-guidelines.md) |
-| Projectstructuur & `.env` configuratie | [project-structure.md](./references/project-structure.md) |
-
-## Technische stack (snel overzicht)
-
-| Component | Keuze |
-|-----------|-------|
-| Taal | Python (Anaconda) |
-| Protocol | Model Context Protocol (MCP SDK) |
-| API-target | OctoPlant native API op poort `64023` |
-| Runtime | Lokaal, Windows |
-| Centrale client | `src/client.py` → `OctoplantClient` |
+|---|---|
+| Archiefscan en rangschikking | [navigation.md](./references/navigation.md) |
+| MCP-tools | [mcp-tools.md](./references/mcp-tools.md) |
+| Checkout en workspacemirror | [checkout.md](./references/checkout.md) |
+| CLI-export | [export-cli.md](./references/export-cli.md) |
+| Configuratie | [project-structure.md](./references/project-structure.md) |

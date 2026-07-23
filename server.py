@@ -93,7 +93,7 @@ except OctoplantConfigError as e:
         """Geeft aan dat de .env configuratie ontbreekt of onvolledig is."""
         return (
             f"Octoplant MCP is niet geconfigureerd: {e}\n"
-            "Kopieer .env.example naar .env in de projectmap en vul de vereiste waarden in."
+            "Maak een .env-bestand in de projectmap en vul de vereiste waarden in."
         )
 
 

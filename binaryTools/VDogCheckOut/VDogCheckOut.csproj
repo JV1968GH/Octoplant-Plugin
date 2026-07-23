@@ -13,7 +13,7 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <TrimSelf>false</TrimSelf>
-    <Version>1.2.0</Version>
+    <Version>0.4.0</Version>
     <Description>VDogCheckOut -- OctoPlant/versiondog checkout wrapper CLI</Description>
   </PropertyGroup>
 

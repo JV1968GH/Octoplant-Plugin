@@ -33,7 +33,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
         Args:
             component_path:     Relatief pad binnen de archive met verplichte leading backslash,
-                                bijv. "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC08_CE".
+                                bijv. "\\{hoofdmap}\\{installatiemap}\\{PLC-project}".
                                 Laat leeg (None) om alle componenten te checken.
             component_id:       Component-ID als alternatief voor component_path.
             with_backups:       True = backups ook uitchecken (standaard False).

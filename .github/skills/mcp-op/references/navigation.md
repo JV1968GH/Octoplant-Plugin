@@ -1,91 +1,40 @@
-# OctoPlant Archiefstructuur & Navigatie
+# Serverarchive-navigatie
 
-Hoe je het juiste componentpad bepaalt op basis van installatienaam, kostplaats of PLC-nummer.
+`resolve_project` leest de gedeelde archive
+`\\pOctoplan1\poctoplan1_D\vdServerArchive` bij elke oproep. De locatie kan
+alleen voor een andere installatie worden gewijzigd via
+`OCTOPLANT_SERVER_ARCHIVE_PATH`.
 
-## Mapstructuur
+Deze share is strikt **read-only** voor de plugin. Gebruik haar nooit als
+`OCTOPLANT_ARCHIVE_PATH` of `OCTOPLANT_CHECKOUT_PATH`; de runtime weigert die
+configuratie. Alle schrijf- en mirroracties horen uitsluitend in de lokale
+clientarchive en de sessieworkspace thuis.
 
-De versiondog client archive volgt een vaste hiërarchie van 3 niveaus:
+## Resolutieregels
 
-```
-{archive_root}\
-├── RWZI's\
-│   └── {kostplaats} - {installatienaam}\
-│       ├── {kostplaats} - {installatienaam}, PLC01
-│       ├── {kostplaats} - {installatienaam}, PLC01_CE   ← voorkeur boven PLC01
-│       ├── {kostplaats} - {installatienaam}, PLC02_CE
-│       └── ...
-└── PS\
-    └── {kostplaats} - {installatienaam}\
-        └── {kostplaats} - {installatienaam}, PLC01_CE
-```
+1. Gebruik standaard de hoofdmap `RWZI's`. Geef `root_name="PS"` voor
+   pompstations; een andere expliciete hoofdmap wordt eveneens ondersteund.
+2. Normaliseer een korte kostenplaats altijd naar `100000 + kostenplaats`:
+   `0026` wordt dus exact `100026`. Zoek vervolgens uitsluitend naar die
+   volledige cijfergroep; deelmatches zoals `100268` zijn nooit geldig. De
+   installatienaam mag vóór of na die kostenplaats staan.
+3. Zoek in de gevonden `ARCHIVE`-submap naar het gevraagde PLC-project.
+4. Vergelijk PLC-nummers ongeacht voorloopnullen. Een `_CE`-variant krijgt
+   voorrang boven een klassieke variant.
+5. Als kandidaten inhoudelijk gelijk zijn, vergelijk dan de timestamp van de
+   recentste versie in elk project en kies de recentste.
 
-## Sleutelvelden
+Gebruik geen vaste naamgevingsconventie als vervanging voor deze scan: de
+archive is de bron van waarheid voor ontbrekende namen, omgekeerde
+kostenplaatsen en typefouten.
 
-| Veld | Beschrijving | Voorbeeld |
-|------|-------------|---------|
-| **Installatienaam** | Naam van de RWZI of het pompstation | `Dendermonde`, `Gent`, `Dessel` |
-| **Kostplaats** | 6-cijferige code vóór de naam | `100026`, `100020`, `100078` |
-| **PLC-nummer** | 2-cijferig nummer na `PLC` | `01`, `02`, `06` |
+De response bevat twee expliciete paden:
 
-## Padresolutie-regels
-
-### 1. Rootmap (RWZI's vs PS)
-- Prompt vermeldt **RWZI** → gebruik `RWZI's`
-- Prompt vermeldt **PS** of **pompstation** → gebruik `PS`
-- **Niets vermeld** → standaard `RWZI's`
-
-### 2. Installatiesubmap
-- Zoek de map waarvan de naam de installatienaam of kostplaats bevat
-- Formaat: `{kostplaats} - {installatienaam}` (bijv. `100026 - Dendermonde`)
-
-### 3. Componentmap (PLC-selectie)
-- Formaat: `{kostplaats} - {installatienaam}, PLC{##}` (bijv. `100026 - Dendermonde, PLC06_CE`)
-- **Geen PLC-nummer opgegeven** → standaard `PLC01`
-- **Zowel `PLC##` als `PLC##_CE` bestaan** → gebruik altijd `PLC##_CE`, tenzij expliciet anders gevraagd
-- **Alleen `PLC##`** (geen _CE variant) → gebruik `PLC##`
-
-## Padopbouw (stap voor stap)
-
-Gegeven: *"RWZI Dendermonde, PLC06 uitchecken"*
-
-1. Rootmap: `RWZI's` (want RWZI vermeld)
-2. Installatiesubmap: `100026 - Dendermonde` (zoek op naam)
-3. Componentmap: `100026 - Dendermonde, PLC06_CE` (PLC06 + _CE voorkeur)
-
-**Resulterende `/dirR:` waarde:**
-```
-\RWZI's\100026 - Dendermonde\100026 - Dendermonde, PLC06_CE
+```text
+component_path: \{hoofdmap}\{installatiemap}\{PLC-project}
+archive_relative_path: \{hoofdmap}\{installatiemap}\ARCHIVE\{PLC-project}
 ```
 
-> ⚠️ De leading backslash is **verplicht** — zonder geeft `VDogAutoCheckOut.exe` fout 20043.
-
-## Voorbeelden
-
-| Prompt | `/dirR:` parameter |
-|--------|-------------------|
-| "RWZI Dendermonde PLC06" | `\RWZI's\100026 - Dendermonde\100026 - Dendermonde, PLC06_CE` |
-| "RWZI Gent" *(geen PLC)* | `\RWZI's\100020 - Gent\100020 - Gent, PLC01_CE` |
-| "PS Achel PLC02" | `\PS\100138 - Achel\100138 - Achel, PLC02_CE` |
-| "kostplaats 100078" *(geen PLC)* | `\RWZI's\100078 - Dessel\100078 - Dessel, PLC01_CE` |
-
-## Bekende kostplaatsen (lokale archive)
-
-| Kostplaats | Naam | Type |
-|------------|------|------|
-| 100020 | Gent | RWZI |
-| 100026 | Dendermonde | RWZI |
-| 100078 | Dessel | RWZI |
-| 100114 | Overpelt | RWZI |
-| 100138 | Achel | RWZI |
-
-> **Let op:** De lokale archive bevat enkel componenten die al eens zijn uitgecheckt. Componenten die nog nooit zijn uitgecheckt bestaan wel op de server maar nog niet lokaal. Gebruik de `/dirR:` parameter op basis van de naamgevingsconventie — de server kent het pad ook als de map lokaal nog niet bestaat.
-
-## Gebruik in MCP-tools
-
-Bij `checkout_component` of `checkout_all` gebruik je de opgebouwde waarde als `component_path`:
-
-```python
-checkout_component(
-    component_path=r"\RWZI's\100026 - Dendermonde\100026 - Dendermonde, PLC06_CE"
-)
-```
+`component_path` is het pad voor `checkout_component`; de CLI-serverboom kent
+de filesystemmap `ARCHIVE` niet. `archive_relative_path` is uitsluitend voor
+INI-velden die expliciet een pad in de gedeelde archive verwachten.
