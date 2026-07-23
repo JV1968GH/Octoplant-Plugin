@@ -1,5 +1,5 @@
 ---
-name: mcp-op
+name: Octoplant
 version: 0.4.0
 description: "OctoPlant/versiondog MCP-kennis voor read-only projectnavigatie in de gedeelde serverarchive en CLI-export. Gebruik voor installaties, kostenplaatsen, PLC-projecten, ARCHIVE, RWZI's, PS, resolve_project en VDogAutoExport.exe."
 ---
