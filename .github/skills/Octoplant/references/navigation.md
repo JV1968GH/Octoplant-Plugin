@@ -1,19 +1,15 @@
 # Serverarchive-navigatie
 
-`resolve_project` leest de gedeelde archive
-`\\pOctoplan1\poctoplan1_D\vdServerArchive` bij elke oproep. De locatie kan
-alleen voor een andere installatie worden gewijzigd via
-`OCTOPLANT_SERVER_ARCHIVE_PATH`.
+`resolve_project` leest bij elke oproep de vast ingebouwde, read-only
+RWZI-serverarchive. Deze locatie is niet via configuratie te wijzigen.
 
 Deze share is strikt **read-only** voor de plugin. Gebruik haar nooit als
-`OCTOPLANT_ARCHIVE_PATH` of `OCTOPLANT_CHECKOUT_PATH`; de runtime weigert die
-configuratie. Alle schrijf- en mirroracties horen uitsluitend in de lokale
-clientarchive en de sessieworkspace thuis.
+`OCTOPLANT_CLIENT_ARCHIVE_PATH`. Alle schrijf- en mirroracties horen uitsluitend
+in de lokale clientarchive en de sessieworkspace thuis.
 
 ## Resolutieregels
 
-1. Gebruik standaard de hoofdmap `RWZI's`. Geef `root_name="PS"` voor
-   pompstations; een andere expliciete hoofdmap wordt eveneens ondersteund.
+1. De vaste hoofdmap is `RWZI's`.
 2. Normaliseer een korte kostenplaats altijd naar `100000 + kostenplaats`:
    `0026` wordt dus exact `100026`. Zoek vervolgens uitsluitend naar die
    volledige cijfergroep; deelmatches zoals `100268` zijn nooit geldig. De

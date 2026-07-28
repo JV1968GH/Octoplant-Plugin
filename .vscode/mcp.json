@@ -1,9 +1,0 @@
-﻿{
-    "servers": {
-        "MCP_OP": {
-            "type": "stdio",
-            "command": "cmd",
-            "args": ["/c", "${workspaceFolder}\\scripts\\start-mcp.cmd"]
-        }
-    }
-}

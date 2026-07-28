@@ -37,7 +37,7 @@ internal static class CheckOutRunner
         string?   componentPath,
         string?   componentId,
         bool      withBackups      = false,
-        int       numberOfArchives = 0,
+        int       numberOfArchives = 1,
         bool      withStdLibs      = false,
         int?      version          = null,
         string?   comment          = null,
@@ -97,8 +97,8 @@ internal static class CheckOutRunner
             args.Add("/dirR:");
 
         args.Add($"/WithBackups:{(withBackups ? "Y" : "N")}");
-        args.Add($"/NumberOfArchives:{numberOfArchives}");
         args.Add($"/WithStdLibs:{(withStdLibs ? "Y" : "N")}");
+        args.Add($"/NumberOfArchives:{numberOfArchives}");
 
         if (version.HasValue)
             args.Add($"/Version:{version.Value}");

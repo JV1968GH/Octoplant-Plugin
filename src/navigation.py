@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Iterable
 
 
-DEFAULT_SERVER_ARCHIVE_PATH = r"\\pOctoplan1\poctoplan1_D\vdServerArchive"
-
-_PLC_PATTERN = re.compile(r"\bPLC\s*0*(\d+)(?!\d)", re.IGNORECASE)
+_PLC_PATTERN = re.compile(r"\bPLC\s*0*(\d+)(?![A-Za-z0-9])", re.IGNORECASE)
+_PLC_INPUT_PATTERN = re.compile(r"^\s*0*(\d+)\s*$")
 _NUMBER_PATTERN = re.compile(r"\d+")
-_RWZI_ALIASES = {"rwzi", "rwzis", "rioolwaterzuiveringsinstallatie"}
-_PS_ALIASES = {"ps", "pompstation", "pompstations"}
+_SERVER_ARCHIVE_RWZI_PATH = Path(
+    r"\\pOctoplan1\poctoplan1_D\vdServerArchive\RWZI's"
+)
 
 
 class ProjectNavigationError(RuntimeError):
@@ -59,7 +59,11 @@ def _normalise(value: str) -> str:
 def _plc_number(value: str) -> int | None:
     """Extract a PLC number from a project name."""
     match = _PLC_PATTERN.search(value)
-    return int(match.group(1)) if match else None
+    if match:
+        return int(match.group(1))
+
+    input_match = _PLC_INPUT_PATTERN.fullmatch(value)
+    return int(input_match.group(1)) if input_match else None
 
 
 def _canonical_cost_center(value: str) -> str:
@@ -73,17 +77,16 @@ def _canonical_cost_center(value: str) -> str:
 
 
 class ServerArchiveNavigator:
-    """Resolve installations and PLC projects by scanning the shared archive."""
+    """Resolve installations and PLC projects from the fixed read-only archive."""
 
-    def __init__(self, server_archive_path: str = DEFAULT_SERVER_ARCHIVE_PATH) -> None:
-        self._archive_root = Path(server_archive_path)
+    def __init__(self) -> None:
+        self._archive_root = _SERVER_ARCHIVE_RWZI_PATH
 
     def resolve(
         self,
         installation_name: str | None = None,
         cost_center: str | None = None,
         plc_name: str | None = None,
-        root_name: str | None = None,
     ) -> ProjectLocation:
         """Scan the archive and return the best matching PLC project.
 
@@ -95,23 +98,24 @@ class ServerArchiveNavigator:
                 "Geef minstens een installatienaam of kostenplaats op."
             )
 
-        root = self._find_root(root_name)
         installation = self._find_installation(
-            root, installation_name=installation_name, cost_center=cost_center
+            self._archive_root,
+            installation_name=installation_name,
+            cost_center=cost_center,
         )
         archive = self._find_archive_folder(installation)
         project, timestamp = self._find_project(
             archive, plc_name=plc_name or "PLC01"
         )
         archive_relative_path = "\\" + "\\".join(
-            project.relative_to(self._archive_root).parts
+            (self._archive_root.name, *project.relative_to(self._archive_root).parts)
         )
         component_path = "\\" + "\\".join(
-            (root.name, installation.name, project.name)
+            (self._archive_root.name, installation.name, project.name)
         )
 
         return ProjectLocation(
-            root_folder=root.name,
+            root_folder=self._archive_root.name,
             installation_folder=installation.name,
             archive_folder=archive.name,
             project_folder=project.name,
@@ -128,33 +132,6 @@ class ServerArchiveNavigator:
             raise ProjectNavigationError(
                 "De gedeelde OctoPlant-serverarchive kan niet worden gelezen."
             ) from error
-
-    def _find_root(self, requested_root: str | None) -> Path:
-        roots = self._directories(self._archive_root)
-        requested = _normalise(requested_root or "RWZI")
-        aliases = (
-            _RWZI_ALIASES
-            if requested in _RWZI_ALIASES
-            else _PS_ALIASES
-            if requested in _PS_ALIASES
-            else {requested}
-        )
-        exact_matches = [
-            folder
-            for folder in roots
-            if _normalise(folder.name) in aliases
-        ]
-        if exact_matches:
-            return max(exact_matches, key=lambda folder: len(_normalise(folder.name)))
-
-        matches = [
-            folder
-            for folder in roots
-            if any(_normalise(folder.name).startswith(alias) for alias in aliases)
-        ]
-        if not matches:
-            raise ProjectNavigationError("De gevraagde hoofdmap bestaat niet in de serverarchive.")
-        return max(matches, key=lambda folder: len(_normalise(folder.name)))
 
     def _find_installation(
         self,

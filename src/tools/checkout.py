@@ -19,7 +19,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         component_path: Optional[str] = None,
         component_id: Optional[str] = None,
         with_backups: bool = False,
-        number_of_archives: int = 0,
+        number_of_archives: int = 1,
         version: Optional[int] = None,
         with_std_libs: bool = False,
         comment: Optional[str] = None,
@@ -28,8 +28,8 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
         Geef component_path (relatief pad) OF component_id op.
         Als geen van beide opgegeven is, worden alle toegankelijke componenten uitgecheckt.
-        Bestanden worden geplaatst in de octoPlantCheckouts-map van de workspace
-        (configureerbaar via OCTOPLANT_CHECKOUT_PATH in .env).
+        Bestanden worden geplaatst in de vaste octoPlantCheckouts-map van de
+        runtime-workspace.
 
         Args:
             component_path:     Relatief pad binnen de archive met verplichte leading backslash,
@@ -37,7 +37,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
                                 Laat leeg (None) om alle componenten te checken.
             component_id:       Component-ID als alternatief voor component_path.
             with_backups:       True = backups ook uitchecken (standaard False).
-            number_of_archives: Aantal te checken archives; 0 = alle (standaard 0).
+            number_of_archives: Aantal te checken archives (0 = alle, standaard 1).
             version:            Versienummer om te checken; standaard = huidige versie.
             with_std_libs:      True = gekoppelde standaardbibliotheken meechecken.
             comment:            Opmerking in het CheckIn-CheckOut-Log.
@@ -60,18 +60,18 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
     @mcp.tool()
     async def checkout_all(
         with_backups: bool = False,
-        number_of_archives: int = 0,
+        number_of_archives: int = 1,
         with_std_libs: bool = False,
     ) -> dict:
         """Check alle toegankelijke componenten uit vanuit OctoPlant/versiondog.
 
         Handige kortweg voor checkout_component zonder padspecificatie.
-        Bestanden worden geplaatst in de octoPlantCheckouts-map van de workspace
-        (configureerbaar via OCTOPLANT_CHECKOUT_PATH in .env).
+        Bestanden worden geplaatst in de vaste octoPlantCheckouts-map van de
+        runtime-workspace.
 
         Args:
             with_backups:       True = backups ook uitchecken.
-            number_of_archives: Aantal te checken archives; 0 = alle.
+            number_of_archives: Aantal te checken archives (0 = alle, standaard 1).
             with_std_libs:      True = standaardbibliotheken meechecken.
 
         Returns:

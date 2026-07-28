@@ -1,5 +1,5 @@
 @echo off
-:: Octoplant -- portable MCP launcher
+:: Octoplant -- GitHub Copilot Desktop MCP launcher
 :: Zoekt Python in de conda "mcp-op" omgeving op meerdere standaardlocaties.
 :: Vereiste: Anaconda of Miniconda met een omgeving genaamd "mcp-op".
 

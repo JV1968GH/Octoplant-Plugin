@@ -2,10 +2,19 @@
 
 | Variabele | Betekenis |
 |---|---|
-| `OCTOPLANT_ARCHIVE_PATH` | Lokale clientarchive voor `VDogAutoExport.exe`. |
-| `OCTOPLANT_SERVER_ARCHIVE_PATH` | Gedeelde, read-only serverarchive voor `resolve_project`; standaard `\\pOctoplan1\poctoplan1_D\vdServerArchive`. |
-| `OCTOPLANT_VDOG_CLIENT_PATH` | Map met `VDogAutoExport.exe`, indien auto-discover niet volstaat. |
+| `OCTOPLANT_SERVER` | Lokale OAuth2-eindpuntconfiguratie voor de wrapper. |
+| `OCTOPLANT_CLIENT_ARCHIVE_PATH` | Lokale clientarchive voor `VDogAutoCheckOut.exe`. |
+| `OCTOPLANT_CREDENTIALMANAGER_KEY` | Lokale targetnaam van de Windows Generic Credential. |
 
-De gedeelde archive wordt nooit beschreven door de plugin. De runtime weigert
-te starten als `OCTOPLANT_SERVER_ARCHIVE_PATH` gelijk is aan de lokale
-`OCTOPLANT_ARCHIVE_PATH` of `OCTOPLANT_CHECKOUT_PATH`.
+De gedeelde archive is vast ingebouwd en wordt nooit beschreven door de plugin.
+Check-out gebruikt uitsluitend de lokale `OCTOPLANT_CLIENT_ARCHIVE_PATH`;
+mirroracties schrijven uitsluitend naar `octoPlantCheckouts` onder de
+runtime-workspace.
+
+De versiondog-client staat vast op
+`C:\Program Files (x86)\vdogClient`; de wrapper gebruikt geen alternatieve
+clientpaden of auto-discovery.
+
+Gebruikersnaam, domein en wachtwoord staan nooit in `.env`. De binary leest ze
+uitsluitend uit Windows Credential Manager en geeft credentials, tokens en
+details van de onderliggende binaries nooit door aan MCP-responses.

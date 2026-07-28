@@ -1,9 +1,9 @@
 ﻿"""Octoplant — MCP Server voor OctoPlant/versiondog.
 
-Entry point: python server.py (stdio transport voor VS Code / Claude Desktop).
+Entry point: python server.py (stdio transport voor GitHub Copilot Desktop).
 
 Laadt configuratie uit .env in dezelfde map.
-SCOPE: uitsluitend check-out en export — geen check-in, geen maintenance mode.
+SCOPE: uitsluitend navigatie en check-out — geen check-in, geen maintenance mode.
 """
 
 import os
@@ -22,9 +22,9 @@ from mcp.server.fastmcp import FastMCP
 
 from src.client import OctoplantClient, OctoplantConfigError
 from src.tools.checkout import register_checkout_tools
-from src.tools.export import register_export_tools
+from src.tools.navigation import register_navigation_tools
 
-# Bouw het server-icoon als file:-URI (werkt voor stdio-transport in VS Code).
+# Bouw het server-icoon als file:-URI voor stdio-transport.
 # FastMCP >= ~1.20 ondersteunt de icons-parameter; bij oudere versies wordt
 # het genegeerd via de try/except hieronder.
 _icons = None
@@ -43,7 +43,7 @@ mcp = FastMCP(
     "MCP_OP",
     instructions=(
         "MCP server voor OctoPlant/versiondog. "
-        "Biedt read-only toegang: check-out van componenten en export van projectdata. "
+        "Biedt read-only toegang: navigatie en check-out van componenten. "
         "Check-in en maintenance mode zijn uitdrukkelijk NIET beschikbaar."
     ),
     **({"icons": _icons} if _icons is not None else {}),
@@ -52,7 +52,7 @@ mcp = FastMCP(
 try:
     client = OctoplantClient()
     register_checkout_tools(mcp, client)
-    register_export_tools(mcp, client)
+    register_navigation_tools(mcp, client)
 
     @mcp.tool()
     async def authenticate() -> dict:
@@ -60,40 +60,47 @@ try:
 
         Voert VDogCheckOut.exe login uit en retourneert uitsluitend de exit code.
         Gebruik dit om te controleren of de plugin correct geconfigureerd is
-        voordat je checkout- of export-tools aanroept.
+        voordat je checkout-tools aanroept.
 
         Returns:
             Dict met 'success' (bool) en 'returncode':
             - 0    = verbinding en authenticatie geslaagd
             - 1    = verbindingsfout
-            - 10   = configuratiefout (.env of access-rights database)
-            - 1000 = authenticatie mislukt (controleer credentials)
+            - 10   = configuratiefout
+            - 1000 = authenticatie mislukt
         """
         import asyncio
         import subprocess
         result = await asyncio.to_thread(
             subprocess.run,
-            [client._vdogcheckout_exe, "login"],
-            capture_output=True,
+            [
+                client._vdogcheckout_exe,
+                "--env",
+                str(client._env_file),
+                "login",
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            cwd=client.workspace_path,
         )
         return {
             "success": result.returncode == 0,
             "returncode": result.returncode,
         }
 
-except OctoplantConfigError as e:
+except OctoplantConfigError:
     # Server start wel op maar tools geven een configuratiefout terug
-    # zodat VS Code de server niet afwijst bij ontbrekende .env
+    # zodat de MCP-client de server niet afwijst bij ontbrekende .env
     import sys
 
-    print(f"[Octoplant] Waarschuwing: {e}", file=sys.stderr)
+    print("[Octoplant] Waarschuwing: lokale configuratie is onvolledig.", file=sys.stderr)
 
     @mcp.tool()
     def configuratie_ontbreekt() -> str:
         """Geeft aan dat de .env configuratie ontbreekt of onvolledig is."""
         return (
-            f"Octoplant MCP is niet geconfigureerd: {e}\n"
-            "Maak een .env-bestand in de projectmap en vul de vereiste waarden in."
+            "Octoplant MCP is niet geconfigureerd.\n"
+            "Maak een lokale .env-configuratie volgens .env.example."
         )
 
 

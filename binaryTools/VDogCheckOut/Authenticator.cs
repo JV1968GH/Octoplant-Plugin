@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 namespace VDogCheckOut;
 
 /// <summary>
-/// OAuth2 authenticatie tegen de OctoPlant REST API (poort 64023).
+/// OAuth2 authenticatie tegen de geconfigureerde REST API.
 /// De token wordt gecachet voor de levensduur van het proces.
 ///
-/// Credentials worden intern geladen vanuit het externe credentials-bestand (buiten de workspace).
-/// Ze worden NOOIT hardcoded of als CLI-argument doorgegeven.
+/// Credentials worden uitsluitend uit Windows Credential Manager geladen en
+/// worden nooit gelogd of in een foutmelding opgenomen.
 /// </summary>
 internal static class Authenticator
 {
@@ -31,18 +31,6 @@ internal static class Authenticator
         if (_cachedToken is not null)
             return _cachedToken;
 
-        if (string.IsNullOrWhiteSpace(config.Server))
-            throw new AuthException(
-                "OCTOPLANT_SERVER is niet ingesteld in .env.\n" +
-                "Dit is vereist voor OAuth2-authenticatie.");
-
-        // versiondog verwacht domein als prefix: "DOMEIN\gebruiker"
-        // Als de gebruikersnaam al een \ bevat (DOMAIN\user ingevoerd in GUI),
-        // gebruik dan de gebruikersnaam as-is om dubbele prefix te vermijden.
-        var effectiveUser = (!string.IsNullOrEmpty(config.Domain) && !config.User.Contains('\\'))
-            ? $"{config.Domain}\\{config.User}"
-            : config.User;
-
         using var handler = new HttpClientHandler();
         if (!config.SslVerify)
             handler.ServerCertificateCustomValidationCallback =
@@ -53,7 +41,9 @@ internal static class Authenticator
         var body = new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"]    = "password",
-            ["username"]      = effectiveUser,
+            ["username"]      = string.IsNullOrEmpty(config.Domain)
+                ? config.User
+                : $"{config.Domain}\\{config.User}",
             ["password"]      = config.Password,
             ["client_id"]     = ClientId,
             ["client_secret"] = ClientSecret,
@@ -64,23 +54,20 @@ internal static class Authenticator
         {
             resp = await http.PostAsync($"{config.Server}/v1/oauth2/token", body);
         }
-        catch (HttpRequestException ex)
+        catch (HttpRequestException)
         {
-            throw new AuthException($"Verbinding mislukt met de OctoPlant server: {ex.Message}");
+            throw new AuthException("Authenticatieverbinding is niet beschikbaar.");
         }
 
         if (!resp.IsSuccessStatusCode)
         {
-            // De ruwe serverrespons wordt NIET opgenomen: die kan credentials bevatten.
-            throw new AuthException(
-                $"Login mislukt (HTTP {(int)resp.StatusCode}). " +
-                "Controleer gebruikersnaam, wachtwoord en OCTOPLANT_SERVER.");
+            throw new AuthException("Authenticatie is geweigerd.");
         }
 
         var json = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
         if (!json.RootElement.TryGetProperty("access_token", out var tokenEl)
             || string.IsNullOrWhiteSpace(tokenEl.GetString()))
-            throw new AuthException("Geen 'access_token' in het antwoord van de server.");
+            throw new AuthException("Authenticatieantwoord is ongeldig.");
 
         _cachedToken = tokenEl.GetString()!;
         return _cachedToken;

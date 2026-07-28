@@ -10,12 +10,10 @@ namespace VDogCheckOut;
 ///
 /// Subcommands:
 ///   login                   Test OAuth2-verbinding
-///   token                   Haal een Bearer-token op (stdout, geen label)
 ///   checkout [options]      Component uitchecken (standaard subcommand)
 ///
 /// Gebruik:
 ///   VDogCheckOut.exe login
-///   VDogCheckOut.exe token
 ///   VDogCheckOut.exe checkout &lt;component_path&gt;
 ///   VDogCheckOut.exe checkout --id &lt;component_id&gt;
 ///   VDogCheckOut.exe checkout --all
@@ -25,7 +23,7 @@ namespace VDogCheckOut;
 ///   --id &lt;id&gt;           Component-ID (alternatief voor pad)
 ///   --all               Alle componenten uitchecken
 ///   --backups           Backups meenemen (/WithBackups:Y)
-///   --archives &lt;n&gt;      Aantal archives (0 = alle, standaard 0)
+///   --archives &lt;n&gt;      Aantal archives (0 = alle, standaard 1)
 ///   --std-libs          Standaardbibliotheken meenemen (/WithStdLibs:Y)
 ///   --version &lt;n&gt;       Specifiek versienummer
 ///   --comment &lt;text&gt;    Opmerking in het CheckIn-CheckOut-Log
@@ -77,7 +75,7 @@ internal static class Program
 
         string subcommand;
         int argStart;
-        if (remaining[0].ToLowerInvariant() is "login" or "checkout" or "token")
+        if (remaining[0].ToLowerInvariant() is "login" or "checkout")
         {
             subcommand = remaining[0].ToLowerInvariant();
             argStart   = 1;
@@ -105,7 +103,6 @@ internal static class Program
         return subcommand switch
         {
             "login"    => await RunLoginAsync(config),
-            "token"    => await RunTokenAsync(config),
             "checkout" => await RunCheckoutAsync(config, remaining, argStart),
             _          => ExitError,
         };
@@ -123,29 +120,6 @@ internal static class Program
         }
     }
 
-    /// <summary>
-    /// Schrijft uitsluitend de Bearer-token naar stdout (geen label, geen newline).
-    /// Bedoeld voor machineverwerking door de Python MCP-server.
-    /// Exit 0 = succes, 1000 = authenticatiefout.
-    /// </summary>
-    private static async Task<int> RunTokenAsync(AppConfig config)
-    {
-        try
-        {
-            var token = await Authenticator.GetTokenAsync(config);
-            Console.Write(token);
-            return ExitOk;
-        }
-        catch (AuthException)
-        {
-            return 1000;
-        }
-        catch
-        {
-            return ExitError;
-        }
-    }
-
     private static async Task<int> RunCheckoutAsync(
         AppConfig config,
         System.Collections.Generic.List<string> args,
@@ -156,7 +130,7 @@ internal static class Program
         bool allComponents    = false;
         bool withBackups      = false;
         bool withStdLibs      = false;
-        int  numberOfArchives = 0;
+        int  numberOfArchives = 1;
         int? version          = null;
         string? comment       = null;
         bool skipMirror       = false;
@@ -310,12 +284,10 @@ internal static class Program
 
             Subcommands:
               login                Test OAuth2-verbinding
-              token                Haal Bearer-token op (stdout, geen label)
               checkout             Component uitchecken (standaard als weggelaten)
 
             Gebruik:
               VDogCheckOut.exe login
-              VDogCheckOut.exe token
               VDogCheckOut.exe checkout <component_path>
               VDogCheckOut.exe checkout --id <component_id>
               VDogCheckOut.exe checkout --all
@@ -327,7 +299,7 @@ internal static class Program
               --id <id>           Component-ID als alternatief voor pad
               --all               Alle beschikbare componenten uitchecken
               --backups           Backups meenemen (/WithBackups:Y)
-              --archives <n>      Aantal archives (0 = alle, standaard 0)
+              --archives <n>      Aantal archives (0 = alle, standaard 1)
               --std-libs          Standaardbibliotheken meenemen (/WithStdLibs:Y)
               --version <n>       Specifiek versienummer uitchecken
               --comment <text>    Opmerking in het CheckIn-CheckOut-Log

@@ -10,6 +10,10 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# VS Code workspace settings
+.vscode/
+
 src/__pycache__
 */__pycache__
 *__pycache__
@@ -17,6 +21,7 @@ src/__pycache__
 # Configuratie (machine-specifiek)
 .env
 .env*
+!.env.example
 
 # Lokale, read-only uitgecheckte projectkopieën
 octoPlantCheckouts/

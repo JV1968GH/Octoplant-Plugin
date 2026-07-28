@@ -13,13 +13,8 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <TrimSelf>false</TrimSelf>
-    <Version>0.4.0</Version>
+    <Version>0.5.0</Version>
     <Description>VDogCheckOut -- OctoPlant/versiondog checkout wrapper CLI</Description>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.5" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.5" />
-  </ItemGroup>
 
 </Project>

@@ -1,8 +1,5 @@
 # AGENTS.md — Octoplant plugin (MCP + skills + binary integration)
 
-## CyberSecurity Guidelines
-
-Volg bij elke prompt altijd de instructies in ..\\..\PrimeDirective.md.
 
 ## Plugincontext
 
@@ -23,13 +20,13 @@ Het doel blijft read-only toegang tot OctoPlant/versiondog (checkout + export) v
 - `binaryTools/` = lokale helper binaries en source
 - `octoPlantCheckouts/` = lokale outputmap voor uitgecheckte componenten
 - `.github/skills/` = skilldefinities en referenties
-- `.vscode/mcp.json` = lokale MCP-registratie
+- `.mcp.json` = MCP-registratie voor de plugin
 
 ## Scope en veiligheidsregels
 
 - **Nooit implementeren**: `checkin`, `maintenance_mode`, of enige write/update/delete naar OctoPlant.
 - Authenticatie gebeurt via de binarylaag; credentials blijven buiten MCP-tooling.
-- Ruwe binaire output (`stdout`/`stderr`) van `VDogCheckOut.exe` en `VDogAutoExport.exe` mag niet naar LLM-responses doorstromen.
+- Ruwe binaire output (`stdout`/`stderr`) van `VDogCheckOut.exe` en `VDogAutoCheckOut.exe` mag niet naar LLM-responses doorstromen.
 
 ## Bron van waarheid
 

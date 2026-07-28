@@ -3,7 +3,7 @@
     Bouw VDogCheckOut.exe als self-contained Windows x64 binary.
 
 .DESCRIPTION
-    Vereist: .NET SDK 8 of hoger (https://dotnet.microsoft.com/download)
+    Ontwikkelaarstool. Vereist: .NET SDK 10 of hoger
     Uitvoer: binaryTools\VDogCheckOut\publish\VDogCheckOut.exe
 
 .EXAMPLE
