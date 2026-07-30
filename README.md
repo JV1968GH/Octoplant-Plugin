@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 0.5.0
+**Release:** 0.6.0
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -37,13 +37,16 @@ de geïnstalleerde pluginmap en voer uit:
 ```
 
 Dit script:
+- Initialiseert de gepinde `CredentialsManager`-submodule
 - Maakt de conda-omgeving `mcp-op` aan (Python 3.12)
 - Installeert alle Python-dependencies
-- Controleert de meegeleverde release-build van `VDogCheckOut.exe`
+- Controleert de meegeleverde release-builds van `VDogCheckOut.exe` en `CredentialsManager.exe`
 - Maakt een lokale `.env` op basis van `.env.example` als die nog niet bestaat
 
 Een .NET SDK is niet nodig op een clienttoestel: de wrapper is als
-self-contained release-build met de plugin meegeleverd.
+self-contained release-build met de plugin meegeleverd. De submodule is een
+buildafhankelijkheid; de runtime gebruikt de meegeleverde executable naast de
+wrapper.
 
 ### Stap 3 — `.env` aanpassen
 
@@ -53,13 +56,13 @@ padinstellingen in volgens de interne procedure:
 ```ini
 OCTOPLANT_SERVER=
 OCTOPLANT_CLIENT_ARCHIVE_PATH=
-OCTOPLANT_CREDENTIALMANAGER_KEY=
 ```
 
-De wrapper leest gebruikersnaam en wachtwoord uitsluitend uit een Windows
-Generic Credential. De target van die referentie staat lokaal in
-`OCTOPLANT_CREDENTIALMANAGER_KEY`; geen van deze gegevens wordt gelogd of via MCP
-doorgegeven.
+De wrapper leest gebruikersnaam, domein en wachtwoord uitsluitend uit de
+Windows Generic Credential met vaste targetnaam `Octoplant`. De meegeleverde
+`CredentialsManager.exe` draagt die gegevens uitsluitend via een private
+named pipe in het geheugen over; geen van deze gegevens wordt gelogd of via
+MCP doorgegeven.
 
 ### Stap 4 — Verbinding testen
 
@@ -81,7 +84,7 @@ de server start automatisch wanneer de plugin is ingeschakeld.
 
 Bij problemen:
 1. Controleer of de conda-omgeving `mcp-op` bestaat: `conda env list`.
-2. Controleer of `VDogCheckOut.exe` aanwezig is in `binaryTools\VDogCheckOut\publish\`.
+2. Controleer of zowel `VDogCheckOut.exe` als `CredentialsManager.exe` aanwezig zijn in `binaryTools\VDogCheckOut\publish\`.
 3. Test de verbinding éénmaal met `VDogCheckOut.exe login`.
 
 ---
@@ -177,7 +180,8 @@ MCP-server draait.
 ## Beveiliging
 
 - Gebruikersnaam, domein en wachtwoord staan **nooit** in `.env` of de MCP-communicatie
-- Credentials worden uitsluitend opgehaald uit Windows Credential Manager en zijn nooit zichtbaar voor de AI
+- Credentials worden uitsluitend opgehaald uit Windows Credential Manager met vaste targetnaam `Octoplant` en zijn nooit zichtbaar voor de AI
+- `CredentialsManager.exe` geeft credentials alleen via een per aanvraag gemaakte private named pipe door; stdout, stderr, logs en MCP-responses bevatten nooit credentials
 - Authenticatie- en configuratiefouten geven uitsluitend gestandaardiseerde exitcodes; credentials, tokens en ruwe uitvoer van onderliggende binaries komen niet in logging of tool-responses
 - Bearer-tokens worden nooit gelogd of in tool-responses opgenomen
 - De plugin biedt uitsluitend **leesbewerkingen** — terugschrijven naar OctoPlant is geblokkeerd
@@ -202,14 +206,16 @@ Octoplant-Plugin/
 │       ├── checkout.py          # checkout_component, checkout_all
 │       └── navigation.py        # resolve_project
 ├── binaryTools/
+│   ├── CredentialsManager/     # Gepinde Git-submodule (buildafhankelijkheid)
 │   └── VDogCheckOut/
 │       ├── publish/
-│       │   └── VDogCheckOut.exe # Self-contained wrapper (credentials intern)
+│       │   ├── VDogCheckOut.exe       # Self-contained wrapper
+│       │   └── CredentialsManager.exe # Runtime credential helper
 │       ├── Program.cs
 │       ├── Authenticator.cs
 │       ├── Checkout.cs
 │       ├── Config.cs
-│       └── WindowsCredentialManager.cs
+│       └── CredentialsManagerClient.cs
 ├── octoPlantCheckouts/          # Lokale mirror van uitgecheckte componenten
 ├── assets/
 │   └── Octoplant.png

@@ -35,7 +35,6 @@ class OctoplantClient:
             for name in (
                 "OCTOPLANT_SERVER",
                 "OCTOPLANT_CLIENT_ARCHIVE_PATH",
-                "OCTOPLANT_CREDENTIALMANAGER_KEY",
             )
             if not os.environ.get(name)
         ]

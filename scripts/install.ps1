@@ -4,11 +4,12 @@
     Eenmalig uitvoeren op een nieuw toestel om alles te configureren.
 
 .DESCRIPTION
-    1. Controleert of conda aanwezig is
-    2. Maakt de conda omgeving "mcp-op" aan (of updatet die)
-    3. Installeert Python-dependencies
-    4. Controleert de meegeleverde release-build van VDogCheckOut.exe
-    5. Maakt een leeg .env-bestand aan (als nog niet aanwezig)
+    1. Initialiseert de CredentialsManager-submodule
+    2. Controleert of conda aanwezig is
+    3. Maakt de conda omgeving "mcp-op" aan (of updatet die)
+    4. Installeert Python-dependencies
+    5. Controleert de meegeleverde release-builds
+    6. Maakt een leeg .env-bestand aan (als nog niet aanwezig)
 
 .NOTES
     Vereisten:
@@ -60,6 +61,22 @@ function Find-CondaExe {
     return $null
 }
 
+# --- 0. Build dependency ---
+$gitModules = Join-Path $Root ".gitmodules"
+if (Test-Path $gitModules -PathType Leaf) {
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if (-not $git) {
+        Abort "Git is nodig om de CredentialsManager-submodule te initialiseren."
+    }
+
+    Write-Step "CredentialsManager-submodule initialiseren"
+    & $git.Source -C $Root submodule update --init --recursive
+    if ($LASTEXITCODE -ne 0) {
+        Abort "Initialiseren van de CredentialsManager-submodule mislukt."
+    }
+    Write-OK "CredentialsManager-submodule is beschikbaar."
+}
+
 # --- 1. Conda ---
 Write-Step "Conda controleren"
 $CondaExe = Find-CondaExe
@@ -86,13 +103,18 @@ Write-Step "Python-dependencies installeren"
 if ($LASTEXITCODE -ne 0) { Abort "pip install mislukt." }
 Write-OK "Dependencies geinstalleerd."
 
-# --- 4. Release-wrapper ---
-Write-Step "Meegeleverde VDogCheckOut.exe controleren"
+# --- 4. Release-wrappers ---
+Write-Step "Meegeleverde release-executables controleren"
 $wrapperExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\VDogCheckOut.exe"
+$credentialsExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.exe"
 if (-not (Test-Path $wrapperExe -PathType Leaf)) {
     Abort "Meegeleverde VDogCheckOut.exe ontbreekt. Installeer de plugin opnieuw via de marketplace."
 }
 Write-OK "VDogCheckOut.exe aanwezig: $wrapperExe"
+if (-not (Test-Path $credentialsExe -PathType Leaf)) {
+    Abort "Meegeleverde CredentialsManager.exe ontbreekt. Installeer de plugin opnieuw via de marketplace."
+}
+Write-OK "CredentialsManager.exe aanwezig: $credentialsExe"
 
 # --- 5. .env aanmaken ---
 Write-Step ".env configuratie"

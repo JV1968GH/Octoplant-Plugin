@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace VDogCheckOut;
 
@@ -20,6 +19,7 @@ internal sealed record AppConfig(
 
 internal static class ConfigLoader
 {
+    private const string CredentialTarget = "Octoplant";
     private const string VdogClientPath = @"C:\Program Files (x86)\vdogClient";
 
     public static AppConfig Load(string? envPath = null)
@@ -29,9 +29,7 @@ internal static class ConfigLoader
 
         var env = LoadEnvFile(envFile);
         var projectRoot = Path.GetFullPath(Path.GetDirectoryName(envFile)!);
-        var credentialTarget = GetRequired(env, "OCTOPLANT_CREDENTIALMANAGER_KEY");
-        var credential = WindowsCredentialManager.ReadGenericCredential(credentialTarget);
-        var (user, domain) = SplitQualifiedUser(credential.UserName);
+        var credential = CredentialsManagerClient.ReadGenericCredential(CredentialTarget);
         var vdogClientPath = ResolveVdogClientPath();
         var archivePath = ResolvePath(GetRequired(env, "OCTOPLANT_CLIENT_ARCHIVE_PATH"), projectRoot);
         var server = GetRequired(env, "OCTOPLANT_SERVER").TrimEnd('/');
@@ -41,9 +39,9 @@ internal static class ConfigLoader
             "octoPlantCheckouts");
 
         return new AppConfig(
-            user,
+            credential.UserName,
             credential.Password,
-            domain,
+            credential.Domain,
             server,
             sslVerify,
             archivePath,
@@ -58,15 +56,6 @@ internal static class ConfigLoader
             return VdogClientPath;
 
         throw new ConfigException("De vereiste versiondog-client is niet beschikbaar.");
-    }
-
-    private static (string User, string Domain) SplitQualifiedUser(string userName)
-    {
-        var separator = userName.IndexOf('\\');
-        if (separator <= 0 || separator == userName.Length - 1)
-            return (userName, string.Empty);
-
-        return (userName[(separator + 1)..], userName[..separator]);
     }
 
     private static string? FindFileUpward(string fileName)

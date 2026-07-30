@@ -15,6 +15,32 @@ $ErrorActionPreference = "Stop"
 
 $projectDir = $PSScriptRoot
 $publishDir = Join-Path $projectDir "publish"
+$binaryToolsDir = Split-Path -Parent $projectDir
+$credentialsProjectDir = Join-Path $binaryToolsDir "CredentialsManager"
+$credentialsProject = Join-Path $credentialsProjectDir "CredentialsManager.csproj"
+$credentialsPublishDir = Join-Path $credentialsProjectDir "publish"
+$credentialsExe = Join-Path $credentialsPublishDir "CredentialsManager.exe"
+
+if (-not (Test-Path $credentialsProject -PathType Leaf)) {
+    Write-Host "CredentialsManager-submodule ontbreekt. Voer 'git submodule update --init --recursive' uit." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Bouwen van CredentialsManager (Release, win-x64, self-contained)..." -ForegroundColor Cyan
+
+dotnet publish $credentialsProject `
+    --configuration Release `
+    --runtime win-x64 `
+    --self-contained true `
+    -p:PublishSingleFile=true `
+    -p:EnableCompressionInSingleFile=true `
+    --output $credentialsPublishDir `
+    --nologo
+
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path $credentialsExe -PathType Leaf)) {
+    Write-Host "Build van CredentialsManager mislukt." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host "Bouwen van VDogCheckOut (Release, win-x64, self-contained)..." -ForegroundColor Cyan
 
@@ -33,10 +59,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $exe = Join-Path $publishDir "VDogCheckOut.exe"
-if (Test-Path $exe) {
+if ((Test-Path $exe -PathType Leaf) -and (Test-Path $credentialsExe -PathType Leaf)) {
+    Copy-Item $credentialsExe (Join-Path $publishDir "CredentialsManager.exe") -Force
     $size = [math]::Round((Get-Item $exe).Length / 1MB, 1)
     Write-Host ""
-    Write-Host "Klaar: $exe  ($size MB)" -ForegroundColor Green
+    Write-Host "Klaar: $exe  ($size MB) met CredentialsManager.exe" -ForegroundColor Green
     Write-Host ""
     Write-Host "Gebruik (vanuit de Octoplant projectroot, zodat .env gevonden wordt):" -ForegroundColor Yellow
     Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe --help"
@@ -46,6 +73,6 @@ if (Test-Path $exe) {
     Write-Host ""
     Write-Host "Zorg dat credentials beschikbaar zijn op dit toestel." -ForegroundColor Yellow
 } else {
-    Write-Host "Exe niet gevonden na build. Controleer de uitvoer hierboven." -ForegroundColor Red
+    Write-Host "Release-executables ontbreken na build. Controleer de uitvoer hierboven." -ForegroundColor Red
     exit 1
 }

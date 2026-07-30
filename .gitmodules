@@ -1,0 +1,3 @@
+[submodule "binaryTools/CredentialsManager"]
+	path = binaryTools/CredentialsManager
+	url = https://github.com/JV1968GH/CredentialsManager.git
