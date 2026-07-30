@@ -22,8 +22,24 @@ $credentialsPublishDir = Join-Path $credentialsProjectDir "publish"
 $credentialsExe = Join-Path $credentialsPublishDir "CredentialsManager.exe"
 
 if (-not (Test-Path $credentialsProject -PathType Leaf)) {
-    Write-Host "CredentialsManager-submodule ontbreekt. Voer 'git submodule update --init --recursive' uit." -ForegroundColor Red
-    exit 1
+    $root = Split-Path -Parent $binaryToolsDir
+    if (-not (Test-Path (Join-Path $root ".git") -PathType Container)) {
+        Write-Host "CredentialsManager-submodule ontbreekt. Installeer de plugin opnieuw via de marketplace." -ForegroundColor Red
+        exit 1
+    }
+
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if (-not $git) {
+        Write-Host "Git is nodig om de CredentialsManager-submodule te initialiseren." -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host "CredentialsManager-submodule initialiseren..." -ForegroundColor Cyan
+    & $git.Source -C $root submodule update --init --recursive
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $credentialsProject -PathType Leaf)) {
+        Write-Host "Initialiseren van de CredentialsManager-submodule mislukt." -ForegroundColor Red
+        exit 1
+    }
 }
 
 Write-Host "Bouwen van CredentialsManager (Release, win-x64, self-contained)..." -ForegroundColor Cyan

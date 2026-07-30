@@ -37,10 +37,10 @@ de geïnstalleerde pluginmap en voer uit:
 ```
 
 Dit script:
-- Initialiseert de gepinde `CredentialsManager`-submodule
+- Valideert het meegeleverde runtimepakket met `VDogCheckOut.exe` en `CredentialsManager.exe`
+- Bouwt beide exe's vanuit de gepinde `CredentialsManager`-submodule wanneer artifacts in een broncheckout ontbreken
 - Maakt de conda-omgeving `mcp-op` aan (Python 3.12)
 - Installeert alle Python-dependencies
-- Controleert de meegeleverde release-builds van `VDogCheckOut.exe` en `CredentialsManager.exe`
 - Maakt een lokale `.env` op basis van `.env.example` als die nog niet bestaat
 
 Een .NET SDK is niet nodig op een clienttoestel: de wrapper is als

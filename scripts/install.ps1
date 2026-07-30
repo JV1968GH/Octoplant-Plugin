@@ -61,22 +61,6 @@ function Find-CondaExe {
     return $null
 }
 
-# --- 0. Build dependency ---
-$gitModules = Join-Path $Root ".gitmodules"
-if (Test-Path $gitModules -PathType Leaf) {
-    $git = Get-Command git -ErrorAction SilentlyContinue
-    if (-not $git) {
-        Abort "Git is nodig om de CredentialsManager-submodule te initialiseren."
-    }
-
-    Write-Step "CredentialsManager-submodule initialiseren"
-    & $git.Source -C $Root submodule update --init --recursive
-    if ($LASTEXITCODE -ne 0) {
-        Abort "Initialiseren van de CredentialsManager-submodule mislukt."
-    }
-    Write-OK "CredentialsManager-submodule is beschikbaar."
-}
-
 # --- 1. Conda ---
 Write-Step "Conda controleren"
 $CondaExe = Find-CondaExe
@@ -103,17 +87,27 @@ Write-Step "Python-dependencies installeren"
 if ($LASTEXITCODE -ne 0) { Abort "pip install mislukt." }
 Write-OK "Dependencies geinstalleerd."
 
-# --- 4. Release-wrappers ---
-Write-Step "Meegeleverde release-executables controleren"
+# --- 4. Runtimepakket ---
+$buildScript = Join-Path $Root "binaryTools\VDogCheckOut\build.ps1"
 $wrapperExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\VDogCheckOut.exe"
 $credentialsExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.exe"
-if (-not (Test-Path $wrapperExe -PathType Leaf)) {
-    Abort "Meegeleverde VDogCheckOut.exe ontbreekt. Installeer de plugin opnieuw via de marketplace."
+if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentialsExe -PathType Leaf)) {
+    if (-not (Test-Path (Join-Path $Root ".git") -PathType Container)) {
+        Abort "Runtimepakket onvolledig. Installeer de plugin opnieuw via de marketplace."
+    }
+
+    Write-Step "Runtimepakket vanuit broncode bouwen"
+    & $buildScript
+    if ($LASTEXITCODE -ne 0) {
+        Abort "Build van het runtimepakket mislukt."
+    }
+}
+
+Write-Step "Runtimepakket controleren"
+if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentialsExe -PathType Leaf)) {
+    Abort "Runtimepakket is onvolledig na installatie."
 }
 Write-OK "VDogCheckOut.exe aanwezig: $wrapperExe"
-if (-not (Test-Path $credentialsExe -PathType Leaf)) {
-    Abort "Meegeleverde CredentialsManager.exe ontbreekt. Installeer de plugin opnieuw via de marketplace."
-}
 Write-OK "CredentialsManager.exe aanwezig: $credentialsExe"
 
 # --- 5. .env aanmaken ---
