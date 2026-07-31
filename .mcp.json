@@ -6,7 +6,8 @@
       "args": [
         "/c",
         "${PLUGIN_ROOT}\\scripts\\start-mcp.cmd"
-      ]
+      ],
+      "tools": ["*"]
     }
   }
 }
