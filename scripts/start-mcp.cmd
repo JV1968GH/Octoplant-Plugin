@@ -1,52 +1,60 @@
 @echo off
-:: Octoplant -- GitHub Copilot Desktop MCP launcher
-:: Zoekt Python in de conda "mcp-op" omgeving op meerdere standaardlocaties.
-:: Vereiste: Anaconda of Miniconda met een omgeving genaamd "mcp-op".
+:: Octoplant -- GitHub Copilot Desktop MCP launcher.
+:: Candidate runtimes are verified for Python 3.11+ and server dependencies
+:: before the server receives stdio.
 
-setlocal
-set "ENV_NAME=mcp-op"
-set "SCRIPT=%~dp0..\server.py"
-set "CONDA_EXE="
+setlocal EnableExtensions DisableDelayedExpansion
+set "ROOT=%~dp0.."
+set "SCRIPT=%ROOT%\server.py"
+set "LOCAL_PYTHON=%ROOT%\.venv\Scripts\python.exe"
 
-:: Zoek Python in bekende conda-installaties
-for %%B in (
-    "%USERPROFILE%\.conda"
-    "%USERPROFILE%\anaconda3"
-    "%USERPROFILE%\miniconda3"
-    "%USERPROFILE%\AppData\Local\anaconda3"
-    "%USERPROFILE%\AppData\Local\miniconda3"
-    "C:\ProgramData\anaconda3"
-    "C:\ProgramData\miniconda3"
-    "C:\tools\anaconda3"
-    "C:\tools\miniconda3"
-) do (
-    if exist "%%~B\envs\%ENV_NAME%\python.exe" (
-        "%%~B\envs\%ENV_NAME%\python.exe" "%SCRIPT%"
+if defined OCTOPLANT_PYTHON_PATH (
+    if exist "%OCTOPLANT_PYTHON_PATH%" (
+        call :validate_path "%OCTOPLANT_PYTHON_PATH%"
+        if not errorlevel 1 (
+            "%OCTOPLANT_PYTHON_PATH%" "%SCRIPT%"
+            exit /b %ERRORLEVEL%
+        )
+        >&2 echo [Octoplant] OCTOPLANT_PYTHON_PATH cannot start the MCP runtime; using automatic selection.
+    ) else (
+        >&2 echo [Octoplant] OCTOPLANT_PYTHON_PATH does not exist; using automatic selection.
+    )
+)
+
+if exist "%LOCAL_PYTHON%" (
+    call :validate_path "%LOCAL_PYTHON%"
+    if not errorlevel 1 (
+        "%LOCAL_PYTHON%" "%SCRIPT%"
         exit /b %ERRORLEVEL%
     )
+    >&2 echo [Octoplant] Plugin-local .venv cannot start the MCP runtime; trying system launchers.
 )
 
-:: Zoek conda.exe op bekende locaties als conda niet in PATH staat
-for %%C in (
-    "%USERPROFILE%\anaconda3\Scripts\conda.exe"
-    "%USERPROFILE%\miniconda3\Scripts\conda.exe"
-    "%USERPROFILE%\AppData\Local\anaconda3\Scripts\conda.exe"
-    "%USERPROFILE%\AppData\Local\miniconda3\Scripts\conda.exe"
-    "C:\ProgramData\anaconda3\Scripts\conda.exe"
-    "C:\ProgramData\miniconda3\Scripts\conda.exe"
-    "C:\tools\anaconda3\Scripts\conda.exe"
-    "C:\tools\miniconda3\Scripts\conda.exe"
-) do (
-    if exist "%%~C" (
-        set "CONDA_EXE=%%~C"
-        goto :run_conda
-    )
+call :validate_py_launcher
+if not errorlevel 1 (
+    py -3 "%SCRIPT%"
+    exit /b %ERRORLEVEL%
 )
 
-:: Laatste fallback: conda run via PATH
-conda run -n %ENV_NAME% --no-capture-output python "%SCRIPT%"
+call :validate_path_launcher
+if not errorlevel 1 (
+    python "%SCRIPT%"
+    exit /b %ERRORLEVEL%
+)
+
+>&2 echo [Octoplant] No suitable Python 3.11+ runtime with server dependencies was found. Run scripts\install.ps1.
+exit /b 1
+
+:validate_path
+"%~1" -c "import sys; import dotenv; from mcp.server.fastmcp import FastMCP; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)" >nul 2>nul
 exit /b %ERRORLEVEL%
 
-:run_conda
-"%CONDA_EXE%" run -n %ENV_NAME% --no-capture-output python "%SCRIPT%"
+:validate_py_launcher
+where py >nul 2>nul || exit /b 1
+py -3 -c "import sys; import dotenv; from mcp.server.fastmcp import FastMCP; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)" >nul 2>nul
+exit /b %ERRORLEVEL%
+
+:validate_path_launcher
+where python >nul 2>nul || exit /b 1
+python -c "import sys; import dotenv; from mcp.server.fastmcp import FastMCP; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)" >nul 2>nul
 exit /b %ERRORLEVEL%

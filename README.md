@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 0.6.0
+**Release:** 0.6.2
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -13,7 +13,7 @@ OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
 | Component | Versie | Download |
 |-----------|--------|----------|
-| Anaconda | recent | Bedrijfsportaal |
+| Python | 3.11 of hoger | [python.org](https://www.python.org/downloads/windows/) |
 | versiondog client | geïnstalleerd | via IT / OctoPlant beheerder |
 
 ---
@@ -29,8 +29,9 @@ OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
 ### Stap 2 — Lokale Python-omgeving voorbereiden
 
-Installeer eerst **Anaconda** via het bedrijfsportaal. Open daarna PowerShell in
-de geïnstalleerde pluginmap en voer uit:
+Installeer Python 3.11 of hoger. Zorg dat `py -3` of `python` in je huidige
+sessie beschikbaar is. Open daarna PowerShell in de geïnstalleerde pluginmap
+en voer uit:
 
 ```powershell
 .\scripts\install.ps1
@@ -39,7 +40,7 @@ de geïnstalleerde pluginmap en voer uit:
 Dit script:
 - Valideert het meegeleverde runtimepakket met `VDogCheckOut.exe` en `CredentialsManager.exe`
 - Bouwt beide exe's vanuit de gepinde `CredentialsManager`-submodule wanneer artifacts in een broncheckout ontbreken
-- Maakt de conda-omgeving `mcp-op` aan (Python 3.12)
+- Maakt een plugin-lokale `.venv` aan met de gevonden Python-runtime
 - Installeert alle Python-dependencies
 - Maakt een lokale `.env` op basis van `.env.example` als die nog niet bestaat
 
@@ -56,6 +57,7 @@ padinstellingen in volgens de interne procedure:
 ```ini
 OCTOPLANT_SERVER=
 OCTOPLANT_CLIENT_ARCHIVE_PATH=
+OCTOPLANT_PYTHON_PATH=
 ```
 
 De wrapper leest gebruikersnaam, domein en wachtwoord uitsluitend uit de
@@ -63,6 +65,12 @@ Windows Generic Credential met vaste targetnaam `Octoplant`. De meegeleverde
 `CredentialsManager.exe` draagt die gegevens uitsluitend via een private
 named pipe in het geheugen over; geen van deze gegevens wordt gelogd of via
 MCP doorgegeven.
+
+`OCTOPLANT_PYTHON_PATH` is optioneel en accepteert alleen een bestaand Python
+3.11+-pad waarin de server-dependencies geladen kunnen worden. Zonder deze override
+selecteert de launcher achtereenvolgens de plugin-lokale `.venv`, `py -3` en
+`python` op `PATH`. De launcher wijzigt geen user- of systeem-`PATH` en slaat
+geen interpreterpad op.
 
 ### Stap 4 — Verbinding testen
 
@@ -83,7 +91,7 @@ Open een nieuwe Copilot-chat. De plugin registreert **MCP_OP** via `.mcp.json`;
 de server start automatisch wanneer de plugin is ingeschakeld.
 
 Bij problemen:
-1. Controleer of de conda-omgeving `mcp-op` bestaat: `conda env list`.
+1. Voer `.\scripts\install.ps1` opnieuw uit om de plugin-lokale `.venv` te herstellen.
 2. Controleer of zowel `VDogCheckOut.exe` als `CredentialsManager.exe` aanwezig zijn in `binaryTools\VDogCheckOut\publish\`.
 3. Test de verbinding éénmaal met `VDogCheckOut.exe login`.
 

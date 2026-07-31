@@ -4,16 +4,15 @@
     Eenmalig uitvoeren op een nieuw toestel om alles te configureren.
 
 .DESCRIPTION
-    1. Initialiseert de CredentialsManager-submodule
-    2. Controleert of conda aanwezig is
-    3. Maakt de conda omgeving "mcp-op" aan (of updatet die)
-    4. Installeert Python-dependencies
-    5. Controleert de meegeleverde release-builds
-    6. Maakt een leeg .env-bestand aan (als nog niet aanwezig)
+    1. Zoekt een geschikte Python 3.11+-runtime
+    2. Maakt of hergebruikt de plugin-lokale .venv
+    3. Installeert Python-dependencies
+    4. Controleert de meegeleverde release-builds
+    5. Maakt een leeg .env-bestand aan (als nog niet aanwezig)
 
 .NOTES
     Vereisten:
-    - Anaconda, geïnstalleerd via het bedrijfsportaal
+    - Python 3.11 of hoger, beschikbaar als "py -3" of "python"
 #>
 
 [CmdletBinding()]
@@ -22,7 +21,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$CondaExe = $null
+$VenvPython = Join-Path $Root ".venv\Scripts\python.exe"
 
 function Write-Step([string]$msg) {
     Write-Host ""
@@ -43,51 +42,59 @@ function Abort([string]$msg) {
     exit 1
 }
 
-function Find-CondaExe {
-    $cmd = Get-Command conda -ErrorAction SilentlyContinue
-    if ($cmd) { return $cmd.Source }
+function Test-PythonRuntime([string]$Command, [string[]]$Arguments) {
+    try {
+        & $Command @Arguments -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 11) else 1)" 2>$null
+        return $LASTEXITCODE -eq 0
+    } catch {
+        return $false
+    }
+}
 
-    $candidates = @(
-        "$env:USERPROFILE\anaconda3\Scripts\conda.exe",
-        "$env:USERPROFILE\AppData\Local\anaconda3\Scripts\conda.exe",
-        "C:\ProgramData\anaconda3\Scripts\conda.exe",
-        "C:\tools\anaconda3\Scripts\conda.exe"
-    )
+function Find-PythonRuntime {
+    $py = Get-Command py -ErrorAction SilentlyContinue
+    if ($py -and (Test-PythonRuntime $py.Source @("-3"))) {
+        return @{
+            Command = $py.Source
+            Arguments = @("-3")
+        }
+    }
 
-    foreach ($candidate in $candidates) {
-        if (Test-Path $candidate) { return $candidate }
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    if ($python -and (Test-PythonRuntime $python.Source @())) {
+        return @{
+            Command = $python.Source
+            Arguments = @()
+        }
     }
 
     return $null
 }
 
-# --- 1. Conda ---
-Write-Step "Conda controleren"
-$CondaExe = Find-CondaExe
-if (-not $CondaExe) {
-    Abort "Anaconda niet gevonden. Installeer Anaconda via het bedrijfsportaal en herstart dit script."
+# --- 1. Python en lokale virtuele omgeving ---
+Write-Step "Python 3.11+ controleren"
+$PythonRuntime = Find-PythonRuntime
+if (-not $PythonRuntime) {
+    Abort "Python 3.11+ niet gevonden. Installeer Python en maak 'py -3' of 'python' beschikbaar."
 }
-Write-OK "conda gevonden: $CondaExe"
+Write-OK "Python runtime gevonden: $($PythonRuntime.Command) $($PythonRuntime.Arguments -join ' ')"
 
-# --- 2. Conda omgeving ---
-Write-Step "Conda omgeving 'mcp-op' controleren"
-$envExists = & $CondaExe env list 2>$null | Select-String "mcp-op"
-if ($envExists) {
-    Write-OK "Omgeving 'mcp-op' bestaat al."
+if (-not (Test-Path $VenvPython -PathType Leaf)) {
+    Write-Step "Plugin-lokale .venv aanmaken"
+    & $PythonRuntime.Command @($PythonRuntime.Arguments) -m venv (Join-Path $Root ".venv")
+    if ($LASTEXITCODE -ne 0) { Abort "Aanmaken van de plugin-lokale .venv mislukt." }
+    Write-OK "Plugin-lokale .venv aangemaakt."
 } else {
-    Write-Host "    Aanmaken..." -ForegroundColor Gray
-    & $CondaExe create -n mcp-op python=3.12 -y
-    if ($LASTEXITCODE -ne 0) { Abort "Aanmaken conda omgeving mislukt." }
-    Write-OK "Omgeving 'mcp-op' aangemaakt."
+    Write-OK "Plugin-lokale .venv bestaat al."
 }
 
-# --- 3. Python dependencies ---
+# --- 2. Python dependencies ---
 Write-Step "Python-dependencies installeren"
-& $CondaExe run -n mcp-op pip install -e "$Root" --quiet
+& $VenvPython -m pip install -e "$Root" --quiet
 if ($LASTEXITCODE -ne 0) { Abort "pip install mislukt." }
 Write-OK "Dependencies geinstalleerd."
 
-# --- 4. Runtimepakket ---
+# --- 3. Runtimepakket ---
 $buildScript = Join-Path $Root "binaryTools\VDogCheckOut\build.ps1"
 $wrapperExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\VDogCheckOut.exe"
 $credentialsExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.exe"
@@ -110,7 +117,7 @@ if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentials
 Write-OK "VDogCheckOut.exe aanwezig: $wrapperExe"
 Write-OK "CredentialsManager.exe aanwezig: $credentialsExe"
 
-# --- 5. .env aanmaken ---
+# --- 4. .env aanmaken ---
 Write-Step ".env configuratie"
 $envFile  = Join-Path $Root ".env"
 if (Test-Path $envFile) {
