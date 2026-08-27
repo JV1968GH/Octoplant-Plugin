@@ -20,6 +20,10 @@ src/__pycache__
 
 # Lokale, read-only uitgecheckte projectkopieën
 octoPlantCheckouts/
+*.sta
+*.stu
+*.xef
+*.zef
 
 # Python build-artefacten
 .venv/
