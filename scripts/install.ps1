@@ -97,7 +97,14 @@ Write-OK "Dependencies geinstalleerd."
 $buildScript = Join-Path $Root "binaryTools\VDogCheckOut\build.ps1"
 $wrapperExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\VDogCheckOut.exe"
 $credentialsExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.exe"
-if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentialsExe -PathType Leaf)) {
+$credentialsPreferences = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.preferences.json"
+$credentialsSqliteNative = Join-Path $Root "binaryTools\VDogCheckOut\publish\e_sqlite3.dll"
+if (
+    -not (Test-Path $wrapperExe -PathType Leaf) -or
+    -not (Test-Path $credentialsExe -PathType Leaf) -or
+    -not (Test-Path $credentialsPreferences -PathType Leaf) -or
+    -not (Test-Path $credentialsSqliteNative -PathType Leaf)
+) {
     if (-not (Test-Path (Join-Path $Root ".git") -PathType Container)) {
         Abort "Runtimepakket onvolledig. Installeer de plugin opnieuw via de marketplace."
     }
@@ -110,11 +117,18 @@ if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentials
 }
 
 Write-Step "Runtimepakket controleren"
-if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentialsExe -PathType Leaf)) {
+if (
+    -not (Test-Path $wrapperExe -PathType Leaf) -or
+    -not (Test-Path $credentialsExe -PathType Leaf) -or
+    -not (Test-Path $credentialsPreferences -PathType Leaf) -or
+    -not (Test-Path $credentialsSqliteNative -PathType Leaf)
+) {
     Abort "Runtimepakket is onvolledig na installatie."
 }
 Write-OK "VDogCheckOut.exe aanwezig: $wrapperExe"
 Write-OK "CredentialsManager.exe aanwezig: $credentialsExe"
+Write-OK "CredentialsManager-instellingen aanwezig: $credentialsPreferences"
+Write-OK "SQLite native library aanwezig: $credentialsSqliteNative"
 
 # --- Klaar ---
 Write-Host ""

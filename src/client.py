@@ -1,6 +1,7 @@
 """Read-only OctoPlant/versiondog navigation and checkout client."""
 
 import asyncio
+import os
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -17,6 +18,7 @@ _CHECKOUT_RETURN_CODES: dict[int, str] = {
     0: "OK -- ten minste een component uitgecheckt",
     1: "Fout -- geen check-out mogelijk of minimaal een mislukt",
     2: "Geen componenten gevonden (onvoldoende rechten?)",
+    10: "Configuratiefout -- controleer de lokale Octoplant-pluginruntime",
     1000: "Login-fout -- controleer gebruikersnaam en wachtwoord",
 }
 

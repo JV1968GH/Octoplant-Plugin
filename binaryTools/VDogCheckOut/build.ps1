@@ -20,6 +20,9 @@ $credentialsProjectDir = Join-Path $binaryToolsDir "CredentialsManager"
 $credentialsProject = Join-Path $credentialsProjectDir "CredentialsManager.csproj"
 $credentialsPublishDir = Join-Path $credentialsProjectDir "publish"
 $credentialsExe = Join-Path $credentialsPublishDir "CredentialsManager.exe"
+$credentialsBuildDir = Join-Path $credentialsProjectDir "bin\Release\net10.0-windows\win-x64"
+$credentialsPreferences = Join-Path $credentialsBuildDir "CredentialsManager.preferences.json"
+$credentialsSqliteNative = Join-Path $credentialsBuildDir "e_sqlite3.dll"
 
 if (-not (Test-Path $credentialsProject -PathType Leaf)) {
     $root = Split-Path -Parent $binaryToolsDir
@@ -53,7 +56,12 @@ dotnet publish $credentialsProject `
     --output $credentialsPublishDir `
     --nologo
 
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $credentialsExe -PathType Leaf)) {
+if (
+    $LASTEXITCODE -ne 0 -or
+    -not (Test-Path $credentialsExe -PathType Leaf) -or
+    -not (Test-Path $credentialsPreferences -PathType Leaf) -or
+    -not (Test-Path $credentialsSqliteNative -PathType Leaf)
+) {
     Write-Host "Build van CredentialsManager mislukt." -ForegroundColor Red
     exit 1
 }
@@ -76,7 +84,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $exe = Join-Path $publishDir "VDogCheckOut.exe"
 if ((Test-Path $exe -PathType Leaf) -and (Test-Path $credentialsExe -PathType Leaf)) {
-    Copy-Item $credentialsExe (Join-Path $publishDir "CredentialsManager.exe") -Force
+    Copy-Item $credentialsExe, $credentialsPreferences, $credentialsSqliteNative -Destination $publishDir -Force
     $size = [math]::Round((Get-Item $exe).Length / 1MB, 1)
     Write-Host ""
     Write-Host "Klaar: $exe  ($size MB) met CredentialsManager.exe" -ForegroundColor Green
