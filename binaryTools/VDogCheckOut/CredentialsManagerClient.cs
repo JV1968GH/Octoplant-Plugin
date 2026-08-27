@@ -7,6 +7,7 @@ using System.Text.Json;
 namespace VDogCheckOut;
 
 internal sealed record ManagedCredential(string UserName, string Domain, string Password);
+internal sealed record ManagedSetting(string Value);
 
 internal static class CredentialsManagerClient
 {
@@ -17,10 +18,32 @@ internal static class CredentialsManagerClient
     };
 
     public static ManagedCredential ReadGenericCredential(string credentialTarget) =>
-        ReadGenericCredentialAsync(credentialTarget).GetAwaiter().GetResult();
+        ReadResponseAsync<ManagedCredential>(
+            startInfo =>
+            {
+                startInfo.ArgumentList.Add("--credential-target");
+                startInfo.ArgumentList.Add(credentialTarget);
+            },
+            credential => !string.IsNullOrWhiteSpace(credential.UserName)
+                && credential.Domain is not null
+                && !string.IsNullOrEmpty(credential.Password))
+            .GetAwaiter().GetResult();
 
-    private static async Task<ManagedCredential> ReadGenericCredentialAsync(
-        string credentialTarget)
+    public static string ReadSetting(string mainKey, string subKey) =>
+        ReadResponseAsync<ManagedSetting>(
+            startInfo =>
+            {
+                startInfo.ArgumentList.Add("--main-key");
+                startInfo.ArgumentList.Add(mainKey);
+                startInfo.ArgumentList.Add("--sub-key");
+                startInfo.ArgumentList.Add(subKey);
+            },
+            setting => !string.IsNullOrWhiteSpace(setting.Value))
+            .GetAwaiter().GetResult().Value;
+
+    private static async Task<T> ReadResponseAsync<T>(
+        Action<ProcessStartInfo> configureRequest,
+        Func<T, bool> isValid)
     {
         var executablePath = Path.Combine(AppContext.BaseDirectory, ExecutableName);
         if (!File.Exists(executablePath))
@@ -34,14 +57,14 @@ internal static class CredentialsManagerClient
             PipeTransmissionMode.Byte,
             PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        using var process = StartHelper(executablePath, credentialTarget, pipeName);
+        using var process = StartHelper(executablePath, pipeName, configureRequest);
 
         var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
         try
         {
             await pipe.WaitForConnectionAsync(cancellation.Token);
-            var credential = await JsonSerializer.DeserializeAsync<ManagedCredential>(
+            var response = await JsonSerializer.DeserializeAsync<T>(
                 pipe,
                 JsonOptions,
                 cancellation.Token);
@@ -49,15 +72,12 @@ internal static class CredentialsManagerClient
             await process.WaitForExitAsync(cancellation.Token);
             await Task.WhenAll(stdoutTask, stderrTask);
 
-            if (process.ExitCode != 0 || credential is null
-                || string.IsNullOrWhiteSpace(credential.UserName)
-                || credential.Domain is null
-                || string.IsNullOrEmpty(credential.Password))
+            if (process.ExitCode != 0 || response is null || !isValid(response))
             {
                 throw new ConfigException("De vereiste Windows-referentie is niet beschikbaar.");
             }
 
-            return credential;
+            return response;
         }
         catch (Exception exception) when (
             exception is IOException
@@ -81,8 +101,8 @@ internal static class CredentialsManagerClient
 
     private static Process StartHelper(
         string executablePath,
-        string credentialTarget,
-        string pipeName)
+        string pipeName,
+        Action<ProcessStartInfo> configureRequest)
     {
         var startInfo = new ProcessStartInfo(executablePath)
         {
@@ -91,8 +111,7 @@ internal static class CredentialsManagerClient
             UseShellExecute = false,
             CreateNoWindow = true,
         };
-        startInfo.ArgumentList.Add("--credential-target");
-        startInfo.ArgumentList.Add(credentialTarget);
+        configureRequest(startInfo);
         startInfo.ArgumentList.Add("--pipe-name");
         startInfo.ArgumentList.Add(pipeName);
 

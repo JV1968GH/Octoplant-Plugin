@@ -31,7 +31,6 @@ namespace VDogCheckOut;
 ///   --json              Uitvoer als JSON (voor machineverwerking)
 ///
 /// Algemene opties:
-///   --env &lt;path&gt;        Pad naar .env (override)
 ///   --help, -h          Toon help
 ///
 /// Exit codes:
@@ -49,16 +48,11 @@ internal static class Program
 
     private static async Task<int> Main(string[] args)
     {
-        string? envOverride = null;
-
         var remaining = new System.Collections.Generic.List<string>();
         for (int i = 0; i < args.Length; i++)
         {
             switch (args[i].ToLowerInvariant())
             {
-                case "--env":
-                    envOverride = Next(args, ref i, "--env");
-                    break;
                 default:
                     remaining.Add(args[i]);
                     break;
@@ -89,7 +83,7 @@ internal static class Program
         AppConfig config;
         try
         {
-            config = ConfigLoader.Load(envOverride);
+            config = ConfigLoader.Load();
         }
         catch (ConfigException)
         {
@@ -307,7 +301,6 @@ internal static class Program
               --json              Uitvoer als JSON (voor machineverwerking)
 
             Algemene opties:
-              --env <path>        Pad naar .env (override)
               --help, -h          Toon deze help
 
             Exit codes:
@@ -317,13 +310,6 @@ internal static class Program
               10    Config-fout
               1000  Login-fout
             """);
-    }
-
-    private static string Next(string[] a, ref int i, string flag)
-    {
-        i++;
-        if (i >= a.Length) Die($"{flag} vereist een waarde.");
-        return a[i];
     }
 
     private static string NextL(

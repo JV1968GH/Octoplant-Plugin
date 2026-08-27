@@ -9,7 +9,6 @@ description = "MCP server voor Octoplant/versiondog"
 requires-python = ">=3.11"
 dependencies = [
     "mcp[cli]>=1.0",
-    "python-dotenv>=1.0",
 ]
 
 [tool.setuptools.packages.find]

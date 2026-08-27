@@ -1,7 +1,6 @@
 """Read-only OctoPlant/versiondog navigation and checkout client."""
 
 import asyncio
-import os
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -30,35 +29,18 @@ class OctoplantClient:
     """Client for read-only shared-archive navigation and component checkout."""
 
     def __init__(self) -> None:
-        missing = [
-            name
-            for name in (
-                "OCTOPLANT_SERVER",
-                "OCTOPLANT_CLIENT_ARCHIVE_PATH",
-            )
-            if not os.environ.get(name)
-        ]
-        if missing:
-            raise OctoplantConfigError(
-                f"Ontbrekende omgevingsvariabelen: {', '.join(missing)}. "
-                "Controleer het .env bestand."
-            )
-
-        self.archive_path = os.environ["OCTOPLANT_CLIENT_ARCHIVE_PATH"]
         self.workspace_path = Path.cwd().resolve()
         self.export_path = str(self.workspace_path / "octoPlantCheckouts")
-        self._env_file = _PROJECT_ROOT / ".env"
-        exe_override = os.environ.get("VDOGCHECKOUT_EXE", "")
         self._vdogcheckout_exe = str(
             self._resolve_existing_file(
-                exe_override if exe_override else str(_VDOGCHECKOUT_DEFAULT),
+                str(_VDOGCHECKOUT_DEFAULT),
                 _PROJECT_ROOT,
             )
         )
         if not Path(self._vdogcheckout_exe).exists():
             raise OctoplantConfigError(
                 f"VDogCheckOut.exe niet gevonden: {self._vdogcheckout_exe}\n"
-                "Bouw het project of stel VDOGCHECKOUT_EXE in .env in."
+                "Bouw het project of installeer de plugin-runtime opnieuw."
             )
 
         self._navigator = ServerArchiveNavigator()
@@ -96,8 +78,6 @@ class OctoplantClient:
         """Check out a component or folder through the native versiondog CLI."""
         args: list[str] = [
             self._vdogcheckout_exe,
-            "--env",
-            str(self._env_file),
             "checkout",
         ]
 
