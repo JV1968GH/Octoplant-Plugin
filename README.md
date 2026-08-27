@@ -56,7 +56,7 @@ procedure:
 
 | Subsleutel | Betekenis |
 |---|---|
-| `Server` | Volledige HTTP(S)-server-URL zonder poortnummer. |
+| `URL` | Volledige HTTP(S)-server-URL zonder poortnummer. |
 | `Portnumber` | TCP-poort van de Octoplant-server. |
 | `OCTOPLANT_CLIENT_ARCHIVE_PATH` | Lokale clientarchive voor `VDogAutoCheckOut.exe`. |
 

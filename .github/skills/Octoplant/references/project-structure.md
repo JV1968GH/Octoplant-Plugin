@@ -5,7 +5,7 @@ named pipe. Ze staan onder hoofdkaart `Octoplant`:
 
 | Subsleutel | Betekenis |
 |---|---|
-| `Server` | HTTP(S)-server-URL voor de wrapper, zonder poortnummer. |
+| `URL` | HTTP(S)-server-URL voor de wrapper, zonder poortnummer. |
 | `Portnumber` | TCP-poort voor de Octoplant-server. |
 | `OCTOPLANT_CLIENT_ARCHIVE_PATH` | Lokale clientarchive voor `VDogAutoCheckOut.exe`. |
 

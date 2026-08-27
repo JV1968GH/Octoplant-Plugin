@@ -29,7 +29,7 @@ internal static class ConfigLoader
         var archivePath = ResolvePath(CredentialsManagerClient.ReadSetting(
             CredentialTarget, "OCTOPLANT_CLIENT_ARCHIVE_PATH"));
         var server = BuildServerUri(
-            CredentialsManagerClient.ReadSetting(CredentialTarget, "Server"),
+            CredentialsManagerClient.ReadSetting(CredentialTarget, "URL"),
             CredentialsManagerClient.ReadSetting(CredentialTarget, "Portnumber"));
         var sslVerify = false;
         var checkoutPath = Path.Combine(
