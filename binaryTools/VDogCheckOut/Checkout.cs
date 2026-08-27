@@ -47,7 +47,7 @@ internal static class CheckOutRunner
         if (!File.Exists(exe))
             throw new FileNotFoundException(
                 $"VDogAutoCheckOut.exe niet gevonden: {exe}\n" +
-                "Controleer OCTOPLANT_VDOG_CLIENT_PATH in .env.");
+                "Installeer de vereiste versiondog-client.");
 
         // --- Beschermingsregel (alleen voor specifiek componentpad) ---
         if (!string.IsNullOrEmpty(componentPath))

@@ -4,7 +4,8 @@
 RWZI-serverarchive. Deze locatie is niet via configuratie te wijzigen.
 
 Deze share is strikt **read-only** voor de plugin. Gebruik haar nooit als
-`OCTOPLANT_CLIENT_ARCHIVE_PATH`. Alle schrijf- en mirroracties horen uitsluitend
+de instelling `OCTOPLANT_CLIENT_ARCHIVE_PATH` onder hoofdkaart `Octoplant`.
+Alle schrijf- en mirroracties horen uitsluitend
 in de lokale clientarchive en de sessieworkspace thuis.
 
 ## Resolutieregels

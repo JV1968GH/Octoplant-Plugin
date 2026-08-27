@@ -81,7 +81,7 @@ if ((Test-Path $exe -PathType Leaf) -and (Test-Path $credentialsExe -PathType Le
     Write-Host ""
     Write-Host "Klaar: $exe  ($size MB) met CredentialsManager.exe" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Gebruik (vanuit de Octoplant projectroot, zodat .env gevonden wordt):" -ForegroundColor Yellow
+    Write-Host "Gebruik vanuit de Octoplant-projectroot:" -ForegroundColor Yellow
     Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe --help"
     Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe login"
     Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe `"RWZI's\100026 - Dendermonde\..`""

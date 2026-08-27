@@ -1,8 +1,12 @@
 # Configuratie
 
-| Variabele | Betekenis |
+`CredentialsManager.exe` levert niet-geheime instellingen via een private
+named pipe. Ze staan onder hoofdkaart `Octoplant`:
+
+| Subsleutel | Betekenis |
 |---|---|
-| `OCTOPLANT_SERVER` | Lokale OAuth2-eindpuntconfiguratie voor de wrapper. |
+| `Server` | HTTP(S)-server-URL voor de wrapper, zonder poortnummer. |
+| `Portnumber` | TCP-poort voor de Octoplant-server. |
 | `OCTOPLANT_CLIENT_ARCHIVE_PATH` | Lokale clientarchive voor `VDogAutoCheckOut.exe`. |
 
 De gedeelde archive is vast ingebouwd en wordt nooit beschreven door de plugin.
@@ -14,7 +18,8 @@ De versiondog-client staat vast op
 `C:\Program Files (x86)\vdogClient`; de wrapper gebruikt geen alternatieve
 clientpaden of auto-discovery.
 
-Gebruikersnaam, domein en wachtwoord staan nooit in `.env`. De wrapper leest
-uitsluitend de Windows Generic Credential met vaste targetnaam `Octoplant` via
-de meegeleverde `CredentialsManager.exe`. Credentials, tokens en details van
-onderliggende binaries komen nooit in MCP-responses terecht.
+Gebruikersnaam, domein en wachtwoord worden uitsluitend uit de Windows Generic
+Credential met vaste targetnaam `Octoplant` gelezen. De wrapper leest zowel
+credentials als instellingen via de meegeleverde `CredentialsManager.exe`.
+Credentials, tokens, instellingen en details van onderliggende binaries komen
+nooit in MCP-responses terecht.

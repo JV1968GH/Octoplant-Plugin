@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 0.7.0
+**Release:** 1.0.0
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -42,35 +42,29 @@ Dit script:
 - Bouwt beide exe's vanuit de gepinde `CredentialsManager`-submodule wanneer artifacts in een broncheckout ontbreken
 - Maakt een plugin-lokale `.venv` aan met de gevonden Python-runtime
 - Installeert alle Python-dependencies
-- Maakt een lokale `.env` op basis van `.env.example` als die nog niet bestaat
 
 Een .NET SDK is niet nodig op een clienttoestel: de wrapper is als
 self-contained release-build met de plugin meegeleverd. De submodule is een
 buildafhankelijkheid; de runtime gebruikt de meegeleverde executable naast de
 wrapper.
 
-### Stap 3 — `.env` aanpassen
+### Stap 3 — Octoplant-instellingen opslaan
 
-Kopieer geen credentials naar `.env`. Vul alleen de lokale verbindings- en
-padinstellingen in volgens de interne procedure:
+Open `CredentialsManager.exe` en selecteer de kaart **Octoplant**. Sla onder
+die hoofdkaart de volgende niet-geheime instellingen op volgens de interne
+procedure:
 
-```ini
-OCTOPLANT_SERVER=
-OCTOPLANT_CLIENT_ARCHIVE_PATH=
-OCTOPLANT_PYTHON_PATH=
-```
+| Subsleutel | Betekenis |
+|---|---|
+| `Server` | Volledige HTTP(S)-server-URL zonder poortnummer. |
+| `Portnumber` | TCP-poort van de Octoplant-server. |
+| `OCTOPLANT_CLIENT_ARCHIVE_PATH` | Lokale clientarchive voor `VDogAutoCheckOut.exe`. |
 
 De wrapper leest gebruikersnaam, domein en wachtwoord uitsluitend uit de
 Windows Generic Credential met vaste targetnaam `Octoplant`. De meegeleverde
-`CredentialsManager.exe` draagt die gegevens uitsluitend via een private
-named pipe in het geheugen over; geen van deze gegevens wordt gelogd of via
-MCP doorgegeven.
-
-`OCTOPLANT_PYTHON_PATH` is optioneel en accepteert alleen een bestaand Python
-3.11+-pad waarin de server-dependencies geladen kunnen worden. Zonder deze override
-selecteert de launcher achtereenvolgens de plugin-lokale `.venv`, `py -3` en
-`python` op `PATH`. De launcher wijzigt geen user- of systeem-`PATH` en slaat
-geen interpreterpad op.
+`CredentialsManager.exe` draagt credentials en instellingen uitsluitend via
+een private named pipe in het geheugen over; geen van deze gegevens wordt
+gelogd of via MCP doorgegeven.
 
 ### Stap 4 — Verbinding testen
 
@@ -187,9 +181,9 @@ MCP-server draait.
 
 ## Beveiliging
 
-- Gebruikersnaam, domein en wachtwoord staan **nooit** in `.env` of de MCP-communicatie
+- Gebruikersnaam, domein, wachtwoord en Octoplant-instellingen staan **nooit** in bestanden in de pluginrepository of de MCP-communicatie
 - Credentials worden uitsluitend opgehaald uit Windows Credential Manager met vaste targetnaam `Octoplant` en zijn nooit zichtbaar voor de AI
-- `CredentialsManager.exe` geeft credentials alleen via een per aanvraag gemaakte private named pipe door; stdout, stderr, logs en MCP-responses bevatten nooit credentials
+- `CredentialsManager.exe` geeft credentials en instellingen alleen via een per aanvraag gemaakte private named pipe door; stdout, stderr, logs en MCP-responses bevatten nooit waarden
 - Authenticatie- en configuratiefouten geven uitsluitend gestandaardiseerde exitcodes; credentials, tokens en ruwe uitvoer van onderliggende binaries komen niet in logging of tool-responses
 - Bearer-tokens worden nooit gelogd of in tool-responses opgenomen
 - De plugin biedt uitsluitend **leesbewerkingen** — terugschrijven naar OctoPlant is geblokkeerd
@@ -201,8 +195,6 @@ MCP-server draait.
 ```
 Octoplant-Plugin/
 ├── server.py                    # MCP-server entry point
-├── .env                         # Lokale, niet-geversioneerde configuratie
-├── .env.example                 # Sjabloon zonder concrete waarden
 ├── pyproject.toml               # Python-dependencies
 ├── scripts/
 │   ├── install.ps1              # Eenmalig installatiescript

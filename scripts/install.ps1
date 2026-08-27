@@ -8,7 +8,6 @@
     2. Maakt of hergebruikt de plugin-lokale .venv
     3. Installeert Python-dependencies
     4. Controleert de meegeleverde release-builds
-    5. Maakt een leeg .env-bestand aan (als nog niet aanwezig)
 
 .NOTES
     Vereisten:
@@ -117,17 +116,6 @@ if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentials
 Write-OK "VDogCheckOut.exe aanwezig: $wrapperExe"
 Write-OK "CredentialsManager.exe aanwezig: $credentialsExe"
 
-# --- 4. .env aanmaken ---
-Write-Step ".env configuratie"
-$envFile  = Join-Path $Root ".env"
-if (Test-Path $envFile) {
-    Write-OK ".env bestaat al (niet overschreven)."
-} else {
-    Copy-Item (Join-Path $Root ".env.example") $envFile
-    Write-Warn ".env aangemaakt vanuit .env.example."
-    Write-Warn "Vul de lokale configuratie in volgens de interne procedure."
-}
-
 # --- Klaar ---
 Write-Host ""
 Write-Host "======================================================" -ForegroundColor Green
@@ -135,8 +123,7 @@ Write-Host "  Installatie voltooid." -ForegroundColor Green
 Write-Host "======================================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Volgende stappen:" -ForegroundColor White
-Write-Host "  1. Pas .env aan voor dit toestel (als nog niet gedaan)"
-Write-Host "  2. Maak de Windows-referentie aan volgens de interne procedure"
-Write-Host "  3. Test: .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe login"
-Write-Host "  4. Open GitHub Copilot Desktop en schakel de plugin in"
+Write-Host "  1. Maak de Windows-referentie en Octoplant-instellingen aan volgens de interne procedure"
+Write-Host "  2. Test: .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe login"
+Write-Host "  3. Open GitHub Copilot Desktop en schakel de plugin in"
 Write-Host ""
