@@ -35,7 +35,7 @@ except Exception:
     pass
 
 mcp = FastMCP(
-    "MCP_OCTOPLANT",
+    "MCP_Octoplant",
     instructions=(
         "MCP server voor OctoPlant/versiondog. "
         "Biedt read-only toegang: navigatie en check-out van componenten. "

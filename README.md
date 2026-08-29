@@ -81,7 +81,7 @@ gelogd of via MCP doorgegeven.
 
 ### Stap 5 — Gebruiken in Copilot Desktop
 
-Open een nieuwe Copilot-chat. De plugin registreert **MCP_OCTOPLANT** via `.mcp.json`;
+Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `.mcp.json`;
 de server start automatisch wanneer de plugin is ingeschakeld.
 
 Bij problemen:
