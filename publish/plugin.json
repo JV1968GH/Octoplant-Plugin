@@ -1,0 +1,21 @@
+{
+  "name": "octoplant",
+  "description": "Read-only OctoPlant/versiondog projectnavigatie en checkout",
+  "version": "1.1.5",
+  "author": {
+    "name": "JV1968GH",
+    "email": "admin@octoplant.local"
+  },
+  "license": "MIT",
+  "keywords": [
+    "octoplant",
+    "versiondog",
+    "checkout",
+    "mcp"
+  ],
+  "skills": [
+    ".github/skills/"
+  ],
+  "mcpServers": ".mcp.json",
+  "icon": "assets/Octoplant.png"
+}
