@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "octoplant": {
+    "MCP_OCTOPLANT": {
       "type": "stdio",
       "command": "cmd",
       "args": [

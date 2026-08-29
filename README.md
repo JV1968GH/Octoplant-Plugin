@@ -25,7 +25,7 @@ OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 1. Open **GitHub Copilot Desktop**.
 2. Open **Settings** en kies **Install**.
 3. Kies **Add marketplace** en vul `JV1968GH/OT-MarketPlace` in.
-4. Installeer **octoplant-plugin** en schakel de plugin in.
+4. Installeer **Octoplant** en schakel de plugin in.
 
 ### Stap 2 — Lokale Python-omgeving voorbereiden
 
@@ -81,7 +81,7 @@ gelogd of via MCP doorgegeven.
 
 ### Stap 5 — Gebruiken in Copilot Desktop
 
-Open een nieuwe Copilot-chat. De plugin registreert **MCP_OP** via `.mcp.json`;
+Open een nieuwe Copilot-chat. De plugin registreert **MCP_OCTOPLANT** via `.mcp.json`;
 de server start automatisch wanneer de plugin is ingeschakeld.
 
 Bij problemen:
