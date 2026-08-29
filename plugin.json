@@ -14,7 +14,7 @@
     "mcp"
   ],
   "skills": [
-    ".github/skills/"
+    "skills/"
   ],
   "mcpServers": ".mcp.json",
   "icon": "assets/Octoplant.png"
