@@ -35,6 +35,8 @@ per Windows-gebruiker geinstalleerd in:
 
 De plugininstallatiemap blijft read-only. `scripts\start-mcp.cmd` gebruikt
 eerst de optionele `OCTOPLANT_MCP_PYTHON` override en daarna deze
-gebruiker-lokale runtime. Beide kandidaten moeten Python 3.11+ en `FastMCP`
-bevatten; bij een ontbrekende of ongeldige runtime verwijst de launcher naar
-`scripts\install.ps1`.
+gebruiker-lokale runtime. Ontbreekt die runtime, dan maakt de launcher hem
+automatisch met een beschikbare Python 3.11+-basisruntime en installeert de
+gedeclareerde dependencies voordat de MCP-stdio-server start. Alle
+bootstrap-uitvoer gaat naar stderr. De handmatige `scripts\install.ps1` is
+alleen nodig om de runtime vooraf te maken of te herstellen.
