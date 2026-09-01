@@ -35,8 +35,8 @@ hij de gedeclareerde Python-dependencies. Hiervoor moet Python 3.11 of hoger
 via `py -3` of `python` beschikbaar zijn. De voortgang en bruikbare fouten gaan
 naar stderr, voordat de MCP-stdio-verbinding start.
 
-De MCP-registratie gebruikt een expliciete `timeout` van `300000` milliseconden
-(vijf minuten). Dat geeft een eerste installatie op een beheerd netwerk genoeg
+De MCP-registratie gebruikt een expliciete `timeout` van `600000` milliseconden
+(tien minuten). Dat geeft een eerste installatie op een beheerd netwerk genoeg
 tijd om de venv en dependencies klaar te zetten voordat Copilot de tools
 opvraagt; normale starts gebruiken dezelfde registratie zonder extra wachttijd.
 
@@ -248,5 +248,5 @@ Octoplant-Plugin/
 ```
 
 De registratie gebruikt `${PLUGIN_ROOT}\scripts\start-mcp.cmd` met een
-stdio-timeout van vijf minuten; er zijn geen gebruikersspecifieke absolute
+stdio-timeout van tien minuten; er zijn geen gebruikersspecifieke absolute
 paden in het pluginpakket.

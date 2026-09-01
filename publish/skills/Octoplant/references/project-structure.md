@@ -41,7 +41,7 @@ gedeclareerde dependencies voordat de MCP-stdio-server start. Alle
 bootstrap-uitvoer gaat naar stderr. De handmatige `scripts\install.ps1` is
 alleen nodig om de runtime vooraf te maken of te herstellen.
 
-De portable `.mcp.json`-registratie gebruikt `timeout: 300000` (vijf minuten)
+De portable `.mcp.json`-registratie gebruikt `timeout: 600000` (tien minuten)
 voor de stdio-start. Dit voorkomt dat Copilot de toolregistratie afbreekt
 tijdens de eerste venv- en dependencyinstallatie; normale starts zijn direct
 beschikbaar.

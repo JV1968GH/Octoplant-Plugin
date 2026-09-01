@@ -8,7 +8,7 @@
         "${PLUGIN_ROOT}\\scripts\\start-mcp.cmd"
       ],
       "tools": ["*"],
-      "timeout": 300000
+      "timeout": 600000
     }
   }
 }
