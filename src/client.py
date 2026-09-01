@@ -42,7 +42,7 @@ class OctoplantClient:
         if not Path(self._vdogcheckout_exe).exists():
             raise OctoplantConfigError(
                 f"VDogCheckOut.exe niet gevonden: {self._vdogcheckout_exe}\n"
-                "Bouw het project of installeer de plugin-runtime opnieuw."
+                "Installeer de plugin opnieuw; de meegeleverde runtime-artifacts ontbreken."
             )
 
         self._navigator = ServerArchiveNavigator()

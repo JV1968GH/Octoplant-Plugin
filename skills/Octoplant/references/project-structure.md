@@ -23,3 +23,18 @@ Credential met vaste targetnaam `Octoplant` gelezen. De wrapper leest zowel
 credentials als instellingen via de meegeleverde `CredentialsManager.exe`.
 Credentials, tokens, instellingen en details van onderliggende binaries komen
 nooit in MCP-responses terecht.
+
+## Python MCP-runtime
+
+De plugin gebruikt de officiële Python MCP SDK met `FastMCP`. De runtime wordt
+per Windows-gebruiker geinstalleerd in:
+
+```text
+%LOCALAPPDATA%\AI\Plugins\octoplant\runtime\venv
+```
+
+De plugininstallatiemap blijft read-only. `scripts\start-mcp.cmd` gebruikt
+eerst de optionele `OCTOPLANT_MCP_PYTHON` override en daarna deze
+gebruiker-lokale runtime. Beide kandidaten moeten Python 3.11+ en `FastMCP`
+bevatten; bij een ontbrekende of ongeldige runtime verwijst de launcher naar
+`scripts\install.ps1`.
