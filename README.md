@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 2.1.1
+**Release:** 2.1.2
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -34,6 +34,11 @@ runtime aan in `%LOCALAPPDATA%\AI\Plugins\octoplant\runtime\venv` en installeert
 hij de gedeclareerde Python-dependencies. Hiervoor moet Python 3.11 of hoger
 via `py -3` of `python` beschikbaar zijn. De voortgang en bruikbare fouten gaan
 naar stderr, voordat de MCP-stdio-verbinding start.
+
+De MCP-registratie gebruikt een expliciete `timeout` van `300000` milliseconden
+(vijf minuten). Dat geeft een eerste installatie op een beheerd netwerk genoeg
+tijd om de venv en dependencies klaar te zetten voordat Copilot de tools
+opvraagt; normale starts gebruiken dezelfde registratie zonder extra wachttijd.
 
 De volgende handmatige installatie blijft beschikbaar om de runtime vooraf te
 maken of te herstellen:
@@ -242,5 +247,6 @@ Octoplant-Plugin/
 └── .mcp.json                    # MCP-serverregistratie
 ```
 
-De registratie gebruikt `${PLUGIN_ROOT}\scripts\start-mcp.cmd`; er zijn geen
-gebruikersspecifieke absolute paden in het pluginpakket.
+De registratie gebruikt `${PLUGIN_ROOT}\scripts\start-mcp.cmd` met een
+stdio-timeout van vijf minuten; er zijn geen gebruikersspecifieke absolute
+paden in het pluginpakket.
