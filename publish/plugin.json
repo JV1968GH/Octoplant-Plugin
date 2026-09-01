@@ -1,7 +1,7 @@
 {
   "name": "octoplant",
   "description": "Read-only OctoPlant/versiondog projectnavigatie en checkout",
-  "version": "2.1.1",
+  "version": "2.1.3",
   "author": {
     "name": "Jan Verrept",
     "email": "admin@octoplant.local"
