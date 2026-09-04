@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 2.1.4
+**Release:** 2.1.5
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -130,6 +130,7 @@ Check een specifiek PLC-component of project uit vanuit OctoPlant.
 
 ```
 checkout_component(
+    workspace_path = "C:\\pad\\naar\\de\\hoofdchat-workspace",
     component_path = "\RWZI's\{installatiemap}\{PLC-project}"
 )
 ```
@@ -141,6 +142,7 @@ Parameters:
 
 | Parameter | Type | Beschrijving |
 |-----------|------|-------------|
+| `workspace_path` | string | Verplicht absoluut pad naar de workspace van de hoofdchat |
 | `component_path` | string | Relatief componentpad (met leading `\`) |
 | `component_id` | string | Component-ID als alternatief voor pad |
 | `with_backups` | bool | Backups meenemen (standaard: false) |
@@ -198,11 +200,10 @@ Uitgecheckte bestanden worden gespiegeld naar:
 {workspace}\octoPlantCheckouts\{componentpad}
 ```
 
-Deze bestemming is vast en wordt afgeleid van de actieve client-workspace.
-Bij een geïnstalleerde plugin is dit de workspace van de hoofdchat, niet de
-installatiemap onder `.copilot`. De MCP-configuratie geeft deze workspace
-expliciet door aan zowel de Python-runtime als `VDogCheckOut.exe`; een
-ontbrekende of ongeldige client-workspace stopt de checkout.
+De MCP-server start vanuit de plugininstallatiemap. Elke checkout vereist
+afzonderlijk de absolute `workspace_path` van de hoofdchat en spiegelt alleen
+naar die locatie. Daardoor kan een checkout nooit in de plugininstallatiemap
+onder `.copilot` terechtkomen.
 
 ---
 

@@ -13,8 +13,6 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _VDOGCHECKOUT_DEFAULT = (
     _PROJECT_ROOT / "binaryTools" / "VDogCheckOut" / "publish" / "VDogCheckOut.exe"
 )
-_WORKSPACE_ROOT_ENV = "OCTOPLANT_WORKSPACE_ROOT"
-
 _CHECKOUT_RETURN_CODES: dict[int, str] = {
     0: "OK -- ten minste een component uitgecheckt",
     1: "Fout -- geen check-out mogelijk of minimaal een mislukt",
@@ -32,8 +30,7 @@ class OctoplantClient:
     """Client for read-only shared-archive navigation and component checkout."""
 
     def __init__(self) -> None:
-        self.workspace_path = self._resolve_workspace_path()
-        self.export_path = str(self.workspace_path / "octoPlantCheckouts")
+        self.runtime_path = Path.cwd().resolve()
         self._vdogcheckout_exe = str(
             self._resolve_existing_file(
                 str(_VDOGCHECKOUT_DEFAULT),
@@ -62,17 +59,13 @@ class OctoplantClient:
         ).as_dict()
 
     @staticmethod
-    def _resolve_workspace_path() -> Path:
-        workspace_value = os.environ.get(_WORKSPACE_ROOT_ENV)
-        if workspace_value is None:
-            return Path.cwd().resolve()
-
-        workspace_path = Path(os.path.expandvars(workspace_value.strip())).expanduser()
-        if not workspace_path.is_absolute() or not workspace_path.is_dir():
+    def _resolve_workspace_path(workspace_path: str) -> Path:
+        path = Path(os.path.expandvars(workspace_path.strip())).expanduser()
+        if not path.is_absolute() or not path.is_dir():
             raise OctoplantConfigError(
-                f"{_WORKSPACE_ROOT_ENV} must reference an existing absolute workspace directory."
+                "workspace_path must reference an existing absolute workspace directory."
             )
-        return workspace_path.resolve()
+        return path.resolve()
 
     @staticmethod
     def _resolve_existing_file(path_value: str, base_dir: Path) -> Path:
@@ -83,6 +76,7 @@ class OctoplantClient:
 
     async def checkout_component(
         self,
+        workspace_path: str,
         component_path: Optional[str] = None,
         component_id: Optional[str] = None,
         with_backups: bool = False,
@@ -92,11 +86,13 @@ class OctoplantClient:
         comment: Optional[str] = None,
     ) -> dict[str, Any]:
         """Check out a component or folder through the native versiondog CLI."""
+        checkout_workspace = self._resolve_workspace_path(workspace_path)
+        export_path = str(checkout_workspace / "octoPlantCheckouts")
         args: list[str] = [
             self._vdogcheckout_exe,
             "checkout",
             "--workspace",
-            str(self.workspace_path),
+            str(checkout_workspace),
         ]
 
         if component_id:
@@ -121,7 +117,7 @@ class OctoplantClient:
             args,
             capture_output=True,
             text=True,
-            cwd=self.workspace_path,
+            cwd=self.runtime_path,
         )
 
         return {
@@ -129,7 +125,7 @@ class OctoplantClient:
             "status": _CHECKOUT_RETURN_CODES.get(
                 result.returncode, f"Onbekende code ({result.returncode})"
             ),
-            "checkout_path": self.export_path,
+            "checkout_path": export_path,
             "stdout": "",
             "stderr": "",
             "binary_output_suppressed": True,

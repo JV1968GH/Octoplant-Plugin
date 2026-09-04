@@ -16,6 +16,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
     @mcp.tool()
     async def checkout_component(
+        workspace_path: str,
         component_path: Optional[str] = None,
         component_id: Optional[str] = None,
         with_backups: bool = False,
@@ -32,6 +33,9 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         actieve client-workspace.
 
         Args:
+            workspace_path:     Absoluut pad naar de workspace van de hoofdchat.
+                                De checkout wordt naar deze workspace gekopieerd,
+                                nooit naar de plugininstallatiemap.
             component_path:     Relatief pad binnen de archive met verplichte leading backslash,
                                 bijv. "\\{hoofdmap}\\{installatiemap}\\{PLC-project}".
                                 Laat leeg (None) om alle componenten te checken.
@@ -48,6 +52,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
             onderdrukt werd.
         """
         return await client.checkout_component(
+            workspace_path=workspace_path,
             component_path=component_path,
             component_id=component_id,
             with_backups=with_backups,
@@ -59,6 +64,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
     @mcp.tool()
     async def checkout_all(
+        workspace_path: str,
         with_backups: bool = False,
         number_of_archives: int = 1,
         with_std_libs: bool = False,
@@ -70,6 +76,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         actieve client-workspace.
 
         Args:
+            workspace_path:     Absoluut pad naar de workspace van de hoofdchat.
             with_backups:       True = backups ook uitchecken.
             number_of_archives: Aantal te checken archives (0 = alle, standaard 1).
             with_std_libs:      True = standaardbibliotheken meechecken.
@@ -79,6 +86,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
             dat binaire output onderdrukt werd.
         """
         return await client.checkout_component(
+            workspace_path=workspace_path,
             component_path=None,  # lege /dirR: = alle componenten
             with_backups=with_backups,
             number_of_archives=number_of_archives,

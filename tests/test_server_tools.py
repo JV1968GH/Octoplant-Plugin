@@ -2,7 +2,6 @@
 
 import asyncio
 import importlib
-import os
 import sys
 import tempfile
 import unittest
@@ -44,24 +43,14 @@ class ServerInitializationTests(unittest.TestCase):
 class WorkspaceResolutionTests(unittest.TestCase):
     def test_uses_explicit_client_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
-            with patch.dict(
-                os.environ,
-                {"OCTOPLANT_WORKSPACE_ROOT": workspace},
-                clear=False,
-            ):
-                self.assertEqual(
-                    OctoplantClient._resolve_workspace_path(),
-                    Path(workspace).resolve(),
-                )
+            self.assertEqual(
+                OctoplantClient._resolve_workspace_path(workspace),
+                Path(workspace).resolve(),
+            )
 
     def test_rejects_missing_client_workspace(self) -> None:
-        with patch.dict(
-            os.environ,
-            {"OCTOPLANT_WORKSPACE_ROOT": r"C:\does-not-exist"},
-            clear=False,
-        ):
-            with self.assertRaises(OctoplantConfigError):
-                OctoplantClient._resolve_workspace_path()
+        with self.assertRaises(OctoplantConfigError):
+            OctoplantClient._resolve_workspace_path(r"C:\does-not-exist")
 
 
 if __name__ == "__main__":

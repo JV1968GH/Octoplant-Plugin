@@ -74,7 +74,7 @@ try:
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            cwd=client.workspace_path,
+            cwd=client.runtime_path,
         )
         return {
             "success": result.returncode == 0,

@@ -1,6 +1,7 @@
 # Check-out naar de sessieworkspace
 
-`checkout_component` is read-only voor OctoPlant. Na een geslaagde checkout
+`checkout_component` is read-only voor OctoPlant en vereist de absolute
+`workspace_path` van de hoofdchat. Na een geslaagde checkout
 spiegelt `VDogCheckOut.exe` het component met `robocopy /MIR` van de lokale
 clientarchive naar:
 
@@ -8,10 +9,9 @@ clientarchive naar:
 {workspace}\octoPlantCheckouts\{component_path}
 ```
 
-Deze bestemming is vast en wordt afgeleid van de actieve client-workspace:
-`octoPlantCheckouts` onder die workspace. Bij gebruik als geïnstalleerde plugin
-is dit de workspace van de hoofdchat, nooit de plugininstallatiemap. De
-MCP-configuratie geeft die workspace expliciet door aan de runtime en wrapper.
+De MCP-server draait vanuit de plugininstallatiemap, maar gebruikt uitsluitend
+de verplichte `workspace_path` als bestemming: `octoPlantCheckouts` onder de
+workspace van de hoofdchat, nooit onder de plugininstallatiemap.
 
 Gebruik voor de tool altijd `component_path` uit `resolve_project`; voeg de
 fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.
