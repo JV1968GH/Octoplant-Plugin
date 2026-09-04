@@ -29,7 +29,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         Geef component_path (relatief pad) OF component_id op.
         Als geen van beide opgegeven is, worden alle toegankelijke componenten uitgecheckt.
         Bestanden worden geplaatst in de vaste octoPlantCheckouts-map van de
-        runtime-workspace.
+        actieve client-workspace.
 
         Args:
             component_path:     Relatief pad binnen de archive met verplichte leading backslash,
@@ -67,7 +67,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
         Handige kortweg voor checkout_component zonder padspecificatie.
         Bestanden worden geplaatst in de vaste octoPlantCheckouts-map van de
-        runtime-workspace.
+        actieve client-workspace.
 
         Args:
             with_backups:       True = backups ook uitchecken.

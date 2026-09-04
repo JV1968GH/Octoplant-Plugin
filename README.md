@@ -198,8 +198,9 @@ Uitgecheckte bestanden worden gespiegeld naar:
 {workspace}\octoPlantCheckouts\{componentpad}
 ```
 
-Deze bestemming is vast en wordt afgeleid van de workspace waarin de
-MCP-server draait.
+Deze bestemming is vast en wordt afgeleid van de actieve client-workspace.
+Bij een geïnstalleerde plugin is dit de workspace van de hoofdchat, niet de
+installatiemap onder `.copilot`.
 
 ---
 

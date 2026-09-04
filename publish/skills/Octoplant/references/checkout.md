@@ -8,8 +8,9 @@ clientarchive naar:
 {workspace}\octoPlantCheckouts\{component_path}
 ```
 
-Deze bestemming is vast en wordt afgeleid van de runtime-workspace:
-`octoPlantCheckouts` onder die workspace.
+Deze bestemming is vast en wordt afgeleid van de actieve client-workspace:
+`octoPlantCheckouts` onder die workspace. Bij gebruik als geïnstalleerde plugin
+is dit de workspace van de hoofdchat, nooit de plugininstallatiemap.
 
 Gebruik voor de tool altijd `component_path` uit `resolve_project`; voeg de
 fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.
