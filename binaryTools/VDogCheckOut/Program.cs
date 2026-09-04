@@ -14,10 +14,10 @@ namespace VDogCheckOut;
 ///
 /// Gebruik:
 ///   VDogCheckOut.exe login
-///   VDogCheckOut.exe checkout &lt;component_path&gt;
-///   VDogCheckOut.exe checkout --id &lt;component_id&gt;
-///   VDogCheckOut.exe checkout --all
-///   VDogCheckOut.exe &lt;component_path&gt;           (checkout impliciet)
+///   VDogCheckOut.exe checkout --workspace &lt;workspace_path&gt; &lt;component_path&gt;
+///   VDogCheckOut.exe checkout --workspace &lt;workspace_path&gt; --id &lt;component_id&gt;
+///   VDogCheckOut.exe checkout --workspace &lt;workspace_path&gt; --all
+///   VDogCheckOut.exe --workspace &lt;workspace_path&gt; &lt;component_path&gt;
 ///
 /// Opties (checkout):
 ///   --id &lt;id&gt;           Component-ID (alternatief voor pad)
@@ -28,7 +28,7 @@ namespace VDogCheckOut;
 ///   --version &lt;n&gt;       Specifiek versienummer
 ///   --comment &lt;text&gt;    Opmerking in het CheckIn-CheckOut-Log
 ///   --skip-mirror       Geen robocopy-stap na checkout
-///   --workspace <pad>   Absolute doel-workspace voor de lokale mirror
+///   --workspace <pad>   Verplichte absolute doel-workspace voor de lokale mirror
 ///   --json              Uitvoer als JSON (voor machineverwerking)
 ///
 /// Algemene opties:
@@ -87,6 +87,12 @@ internal static class Program
         {
             subcommand = "checkout";
             argStart   = 0;
+        }
+
+        if (subcommand == "checkout" && string.IsNullOrWhiteSpace(workspacePath))
+        {
+            Console.Error.WriteLine("Fout: checkout vereist --workspace met een absoluut bestaand pad.");
+            return ExitError;
         }
 
         AppConfig config;
@@ -291,14 +297,14 @@ internal static class Program
 
             Gebruik:
               VDogCheckOut.exe login
-              VDogCheckOut.exe checkout <component_path>
-              VDogCheckOut.exe checkout --id <component_id>
-              VDogCheckOut.exe checkout --all
-              VDogCheckOut.exe <component_path>          (checkout impliciet)
+              VDogCheckOut.exe checkout --workspace <workspace_path> <component_path>
+              VDogCheckOut.exe checkout --workspace <workspace_path> --id <component_id>
+              VDogCheckOut.exe checkout --workspace <workspace_path> --all
+              VDogCheckOut.exe --workspace <workspace_path> <component_path>
 
             Checkout-opties:
               <component_path>    Relatief componentpad
-                                  (bijv. "RWZI's\100026 - Dendermonde\...")
+                                  (uit resolve_project.component_path)
               --id <id>           Component-ID als alternatief voor pad
               --all               Alle beschikbare componenten uitchecken
               --backups           Backups meenemen (/WithBackups:Y)
@@ -307,7 +313,7 @@ internal static class Program
               --version <n>       Specifiek versienummer uitchecken
               --comment <text>    Opmerking in het CheckIn-CheckOut-Log
               --skip-mirror       Geen robocopy-stap na checkout
-              --workspace <pad>   Absolute doel-workspace voor de lokale mirror
+              --workspace <pad>   Verplichte absolute doel-workspace voor de lokale mirror
               --json              Uitvoer als JSON (voor machineverwerking)
 
             Algemene opties:

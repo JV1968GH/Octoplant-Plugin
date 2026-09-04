@@ -2,6 +2,7 @@
 
 import asyncio
 import importlib
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -51,6 +52,42 @@ class WorkspaceResolutionTests(unittest.TestCase):
     def test_rejects_missing_client_workspace(self) -> None:
         with self.assertRaises(OctoplantConfigError):
             OctoplantClient._resolve_workspace_path(r"C:\does-not-exist")
+
+    def test_checkout_mirrors_to_the_supplied_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            resolved_workspace = Path(workspace).resolve()
+
+            with patch(
+                "src.client.subprocess.run",
+                return_value=subprocess.CompletedProcess(args=[], returncode=0),
+            ) as run:
+                result = asyncio.run(
+                    client.checkout_component(
+                        workspace,
+                        component_path=r"\{root}\{installation}\{plc-project}",
+                    )
+                )
+
+            command = run.call_args.args[0]
+            self.assertEqual(
+                command[:4],
+                [
+                    client._vdogcheckout_exe,
+                    "checkout",
+                    "--workspace",
+                    str(resolved_workspace),
+                ],
+            )
+            self.assertEqual(run.call_args.kwargs["cwd"], client.runtime_path)
+            self.assertEqual(
+                Path(result["checkout_path"]),
+                resolved_workspace / "octoPlantCheckouts",
+            )
+            self.assertNotEqual(
+                Path(result["checkout_path"]).parent,
+                Path(__file__).resolve().parents[1],
+            )
 
 
 if __name__ == "__main__":
