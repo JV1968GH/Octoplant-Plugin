@@ -2,11 +2,14 @@
 
 import asyncio
 import importlib
+import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
-from src.client import OctoplantConfigError
+from src.client import OctoplantClient, OctoplantConfigError
 
 
 class ServerInitializationTests(unittest.TestCase):
@@ -36,6 +39,29 @@ class ServerInitializationTests(unittest.TestCase):
         tool_names = {tool.name for tool in asyncio.run(server.mcp.list_tools())}
 
         self.assertSetEqual(tool_names, {"configuratie_ontbreekt"})
+
+
+class WorkspaceResolutionTests(unittest.TestCase):
+    def test_uses_explicit_client_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            with patch.dict(
+                os.environ,
+                {"OCTOPLANT_WORKSPACE_ROOT": workspace},
+                clear=False,
+            ):
+                self.assertEqual(
+                    OctoplantClient._resolve_workspace_path(),
+                    Path(workspace).resolve(),
+                )
+
+    def test_rejects_missing_client_workspace(self) -> None:
+        with patch.dict(
+            os.environ,
+            {"OCTOPLANT_WORKSPACE_ROOT": r"C:\does-not-exist"},
+            clear=False,
+        ):
+            with self.assertRaises(OctoplantConfigError):
+                OctoplantClient._resolve_workspace_path()
 
 
 if __name__ == "__main__":

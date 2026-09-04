@@ -13,6 +13,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _VDOGCHECKOUT_DEFAULT = (
     _PROJECT_ROOT / "binaryTools" / "VDogCheckOut" / "publish" / "VDogCheckOut.exe"
 )
+_WORKSPACE_ROOT_ENV = "OCTOPLANT_WORKSPACE_ROOT"
 
 _CHECKOUT_RETURN_CODES: dict[int, str] = {
     0: "OK -- ten minste een component uitgecheckt",
@@ -31,7 +32,7 @@ class OctoplantClient:
     """Client for read-only shared-archive navigation and component checkout."""
 
     def __init__(self) -> None:
-        self.workspace_path = Path.cwd().resolve()
+        self.workspace_path = self._resolve_workspace_path()
         self.export_path = str(self.workspace_path / "octoPlantCheckouts")
         self._vdogcheckout_exe = str(
             self._resolve_existing_file(
@@ -61,6 +62,19 @@ class OctoplantClient:
         ).as_dict()
 
     @staticmethod
+    def _resolve_workspace_path() -> Path:
+        workspace_value = os.environ.get(_WORKSPACE_ROOT_ENV)
+        if workspace_value is None:
+            return Path.cwd().resolve()
+
+        workspace_path = Path(os.path.expandvars(workspace_value.strip())).expanduser()
+        if not workspace_path.is_absolute() or not workspace_path.is_dir():
+            raise OctoplantConfigError(
+                f"{_WORKSPACE_ROOT_ENV} must reference an existing absolute workspace directory."
+            )
+        return workspace_path.resolve()
+
+    @staticmethod
     def _resolve_existing_file(path_value: str, base_dir: Path) -> Path:
         candidate = Path(os.path.expandvars(path_value.strip())).expanduser()
         if not candidate.is_absolute():
@@ -81,6 +95,8 @@ class OctoplantClient:
         args: list[str] = [
             self._vdogcheckout_exe,
             "checkout",
+            "--workspace",
+            str(self.workspace_path),
         ]
 
         if component_id:

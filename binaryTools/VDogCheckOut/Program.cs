@@ -28,6 +28,7 @@ namespace VDogCheckOut;
 ///   --version &lt;n&gt;       Specifiek versienummer
 ///   --comment &lt;text&gt;    Opmerking in het CheckIn-CheckOut-Log
 ///   --skip-mirror       Geen robocopy-stap na checkout
+///   --workspace <pad>   Absolute doel-workspace voor de lokale mirror
 ///   --json              Uitvoer als JSON (voor machineverwerking)
 ///
 /// Algemene opties:
@@ -49,14 +50,22 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         var remaining = new System.Collections.Generic.List<string>();
+        string? workspacePath = null;
         for (int i = 0; i < args.Length; i++)
         {
-            switch (args[i].ToLowerInvariant())
+            if (!string.Equals(args[i], "--workspace", StringComparison.OrdinalIgnoreCase))
             {
-                default:
-                    remaining.Add(args[i]);
-                    break;
+                remaining.Add(args[i]);
+                continue;
             }
+
+            if (workspacePath is not null || i + 1 >= args.Length)
+            {
+                Console.Error.WriteLine("Fout: --workspace vereist precies één absoluut pad.");
+                return ExitError;
+            }
+
+            workspacePath = args[++i];
         }
 
         if (remaining.Count == 0
@@ -83,7 +92,7 @@ internal static class Program
         AppConfig config;
         try
         {
-            config = ConfigLoader.Load();
+            config = ConfigLoader.Load(workspacePath);
         }
         catch (ConfigException)
         {
@@ -298,6 +307,7 @@ internal static class Program
               --version <n>       Specifiek versienummer uitchecken
               --comment <text>    Opmerking in het CheckIn-CheckOut-Log
               --skip-mirror       Geen robocopy-stap na checkout
+              --workspace <pad>   Absolute doel-workspace voor de lokale mirror
               --json              Uitvoer als JSON (voor machineverwerking)
 
             Algemene opties:

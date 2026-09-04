@@ -22,7 +22,7 @@ internal static class ConfigLoader
     private const string CredentialTarget = "Octoplant";
     private const string VdogClientPath = @"C:\Program Files (x86)\vdogClient";
 
-    public static AppConfig Load()
+    public static AppConfig Load(string? workspacePath = null)
     {
         var credential = CredentialsManagerClient.ReadGenericCredential(CredentialTarget);
         var vdogClientPath = ResolveVdogClientPath();
@@ -32,9 +32,8 @@ internal static class ConfigLoader
             CredentialsManagerClient.ReadSetting(CredentialTarget, "URL"),
             CredentialsManagerClient.ReadSetting(CredentialTarget, "Portnumber"));
         var sslVerify = false;
-        var checkoutPath = Path.Combine(
-            Path.GetFullPath(Directory.GetCurrentDirectory()),
-            "octoPlantCheckouts");
+        var projectRoot = ResolveWorkspacePath(workspacePath);
+        var checkoutPath = Path.Combine(projectRoot, "octoPlantCheckouts");
 
         return new AppConfig(
             credential.UserName,
@@ -45,7 +44,7 @@ internal static class ConfigLoader
             archivePath,
             checkoutPath,
             vdogClientPath,
-            Path.GetFullPath(Directory.GetCurrentDirectory()));
+            projectRoot);
     }
 
     private static string ResolveVdogClientPath()
@@ -78,6 +77,17 @@ internal static class ConfigLoader
             throw new ConfigException("De Octoplant-instellingen zijn ongeldig.");
 
         return Path.GetFullPath(expanded);
+    }
+
+    private static string ResolveWorkspacePath(string? workspacePath)
+    {
+        var path = string.IsNullOrWhiteSpace(workspacePath)
+            ? Directory.GetCurrentDirectory()
+            : workspacePath;
+        if (!Path.IsPathFullyQualified(path) || !Directory.Exists(path))
+            throw new ConfigException("De opgegeven workspace bestaat niet of is ongeldig.");
+
+        return Path.GetFullPath(path);
     }
 }
 

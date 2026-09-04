@@ -7,6 +7,10 @@
         "/c",
         "${PLUGIN_ROOT}\\scripts\\start-mcp.cmd"
       ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "OCTOPLANT_WORKSPACE_ROOT": "${workspaceFolder}"
+      },
       "tools": ["*"],
       "timeout": 600000
     }

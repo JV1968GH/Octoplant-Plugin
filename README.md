@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 2.1.2
+**Release:** 2.1.4
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -200,7 +200,9 @@ Uitgecheckte bestanden worden gespiegeld naar:
 
 Deze bestemming is vast en wordt afgeleid van de actieve client-workspace.
 Bij een geïnstalleerde plugin is dit de workspace van de hoofdchat, niet de
-installatiemap onder `.copilot`.
+installatiemap onder `.copilot`. De MCP-configuratie geeft deze workspace
+expliciet door aan zowel de Python-runtime als `VDogCheckOut.exe`; een
+ontbrekende of ongeldige client-workspace stopt de checkout.
 
 ---
 
