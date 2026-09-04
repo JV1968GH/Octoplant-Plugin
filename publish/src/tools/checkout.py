@@ -34,8 +34,8 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
         Args:
             workspace_path:     Absoluut pad naar de projectworkspace van de hoofdchat.
-                                Een Copilot-sessieartefactpad wordt automatisch naar
-                                de bijbehorende projectworkspace opgelost.
+                                Tijdens een Copilot-sessie bepaalt de runtime
+                                automatisch de hoofdchat-workspace.
             component_path:     Relatief pad binnen de archive met verplichte leading backslash,
                                 bijv. "\\{hoofdmap}\\{installatiemap}\\{PLC-project}".
                                 Laat leeg (None) om alle componenten te checken.
@@ -77,8 +77,8 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
         Args:
             workspace_path:     Absoluut pad naar de projectworkspace van de hoofdchat.
-                                Een Copilot-sessieartefactpad wordt automatisch naar
-                                de bijbehorende projectworkspace opgelost.
+                                Tijdens een Copilot-sessie bepaalt de runtime
+                                automatisch de hoofdchat-workspace.
             with_backups:       True = backups ook uitchecken.
             number_of_archives: Aantal te checken archives (0 = alle, standaard 1).
             with_std_libs:      True = standaardbibliotheken meechecken.

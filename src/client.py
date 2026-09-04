@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -60,7 +61,11 @@ class OctoplantClient:
 
     @staticmethod
     def _resolve_workspace_path(workspace_path: str) -> Path:
-        """Resolve a project workspace, including paths below Copilot session artifacts."""
+        """Resolve the active Copilot session workspace or an explicit fallback."""
+        session_workspace = OctoplantClient._resolve_active_session_workspace()
+        if session_workspace is not None:
+            return session_workspace
+
         if not isinstance(workspace_path, str):
             raise OctoplantConfigError(
                 "workspace_path must reference an existing absolute workspace directory."
@@ -72,9 +77,7 @@ class OctoplantClient:
                 "workspace_path must reference an existing absolute workspace directory."
             )
 
-        resolved_path = path.resolve()
-        session_workspace = OctoplantClient._resolve_session_workspace(resolved_path)
-        workspace = session_workspace or resolved_path
+        workspace = path.resolve()
         if workspace == _PROJECT_ROOT:
             raise OctoplantConfigError(
                 "workspace_path must reference the calling project workspace, not the plugin installation directory."
@@ -82,38 +85,39 @@ class OctoplantClient:
         return workspace
 
     @staticmethod
-    def _resolve_session_workspace(path: Path) -> Optional[Path]:
-        """Map a Copilot session artifact path to the session's project workspace."""
-        for session_root in path.parents:
-            if session_root.parent.name.casefold() != "session-state":
-                continue
+    def _resolve_active_session_workspace() -> Optional[Path]:
+        """Read the main chat workspace from the active Copilot session metadata."""
+        session_id = os.environ.get("COPILOT_AGENT_SESSION_ID")
+        if not session_id:
+            return None
+        if not re.fullmatch(
+            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+            session_id,
+            flags=re.IGNORECASE,
+        ):
+            raise OctoplantConfigError("The active Copilot session identifier is invalid.")
 
-            artifacts_root = session_root / "files"
-            try:
-                path.relative_to(artifacts_root)
-            except ValueError:
-                continue
-
-            metadata_path = session_root / "workspace.yaml"
-            if not metadata_path.is_file():
-                raise OctoplantConfigError(
-                    "The supplied session artifact path has no workspace metadata."
-                )
-
-            for line in metadata_path.read_text(encoding="utf-8-sig").splitlines():
-                key, separator, value = line.partition(":")
-                if key == "cwd" and separator:
-                    workspace = Path(
-                        os.path.expandvars(value.strip())
-                    ).expanduser()
-                    if workspace.is_absolute() and workspace.is_dir():
-                        return workspace.resolve()
-                    break
-
+        metadata_path = (
+            Path.home() / ".copilot" / "session-state" / session_id / "workspace.yaml"
+        )
+        if not metadata_path.is_file():
             raise OctoplantConfigError(
-                "The supplied session artifact path has no valid project workspace."
+                "The active Copilot session has no workspace metadata."
             )
-        return None
+
+        for line in metadata_path.read_text(encoding="utf-8-sig").splitlines():
+            key, separator, value = line.partition(":")
+            if key == "cwd" and separator:
+                workspace = Path(os.path.expandvars(value.strip())).expanduser()
+                if workspace.is_absolute() and workspace.is_dir():
+                    resolved_workspace = workspace.resolve()
+                    if resolved_workspace != _PROJECT_ROOT:
+                        return resolved_workspace
+                break
+
+        raise OctoplantConfigError(
+            "The active Copilot session has no valid project workspace."
+        )
 
     @staticmethod
     def _resolve_existing_file(path_value: str, base_dir: Path) -> Path:
