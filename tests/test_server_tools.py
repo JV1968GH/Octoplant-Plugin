@@ -53,6 +53,49 @@ class WorkspaceResolutionTests(unittest.TestCase):
         with self.assertRaises(OctoplantConfigError):
             OctoplantClient._resolve_workspace_path(r"C:\does-not-exist")
 
+    def test_resolves_session_artifact_path_to_project_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            project_workspace = root_path / "OT-Engineer"
+            artifacts_path = (
+                root_path
+                / ".copilot"
+                / "session-state"
+                / "session-id"
+                / "files"
+                / "octoplant"
+            )
+            project_workspace.mkdir()
+            artifacts_path.mkdir(parents=True)
+            (artifacts_path.parents[1] / "workspace.yaml").write_text(
+                f"cwd: {project_workspace}\n",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(
+                OctoplantClient._resolve_workspace_path(str(artifacts_path)),
+                project_workspace.resolve(),
+            )
+
+    def test_rejects_session_artifact_path_without_project_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            artifacts_path = (
+                Path(root)
+                / ".copilot"
+                / "session-state"
+                / "session-id"
+                / "files"
+                / "octoplant"
+            )
+            artifacts_path.mkdir(parents=True)
+            (artifacts_path.parents[1] / "workspace.yaml").write_text(
+                "cwd: C:\\missing-project-workspace\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(OctoplantConfigError):
+                OctoplantClient._resolve_workspace_path(str(artifacts_path))
+
     def test_checkout_mirrors_to_the_supplied_workspace(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()

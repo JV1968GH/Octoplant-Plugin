@@ -1,7 +1,9 @@
 # Check-out naar de sessieworkspace
 
 `checkout_component` is read-only voor OctoPlant en vereist de absolute
-`workspace_path` van de hoofdchat. Na een geslaagde checkout
+`workspace_path` van de hoofdchat. Een pad onder
+`.copilot\session-state\...\files` wordt automatisch opgelost naar de
+projectworkspace (`cwd`) van die sessie. Na een geslaagde checkout
 spiegelt `VDogCheckOut.exe` het component met `robocopy /MIR` van de lokale
 clientarchive naar:
 

@@ -60,12 +60,60 @@ class OctoplantClient:
 
     @staticmethod
     def _resolve_workspace_path(workspace_path: str) -> Path:
+        """Resolve a project workspace, including paths below Copilot session artifacts."""
+        if not isinstance(workspace_path, str):
+            raise OctoplantConfigError(
+                "workspace_path must reference an existing absolute workspace directory."
+            )
+
         path = Path(os.path.expandvars(workspace_path.strip())).expanduser()
         if not path.is_absolute() or not path.is_dir():
             raise OctoplantConfigError(
                 "workspace_path must reference an existing absolute workspace directory."
             )
-        return path.resolve()
+
+        resolved_path = path.resolve()
+        session_workspace = OctoplantClient._resolve_session_workspace(resolved_path)
+        workspace = session_workspace or resolved_path
+        if workspace == _PROJECT_ROOT:
+            raise OctoplantConfigError(
+                "workspace_path must reference the calling project workspace, not the plugin installation directory."
+            )
+        return workspace
+
+    @staticmethod
+    def _resolve_session_workspace(path: Path) -> Optional[Path]:
+        """Map a Copilot session artifact path to the session's project workspace."""
+        for session_root in path.parents:
+            if session_root.parent.name.casefold() != "session-state":
+                continue
+
+            artifacts_root = session_root / "files"
+            try:
+                path.relative_to(artifacts_root)
+            except ValueError:
+                continue
+
+            metadata_path = session_root / "workspace.yaml"
+            if not metadata_path.is_file():
+                raise OctoplantConfigError(
+                    "The supplied session artifact path has no workspace metadata."
+                )
+
+            for line in metadata_path.read_text(encoding="utf-8-sig").splitlines():
+                key, separator, value = line.partition(":")
+                if key == "cwd" and separator:
+                    workspace = Path(
+                        os.path.expandvars(value.strip())
+                    ).expanduser()
+                    if workspace.is_absolute() and workspace.is_dir():
+                        return workspace.resolve()
+                    break
+
+            raise OctoplantConfigError(
+                "The supplied session artifact path has no valid project workspace."
+            )
+        return None
 
     @staticmethod
     def _resolve_existing_file(path_value: str, base_dir: Path) -> Path:

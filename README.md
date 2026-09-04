@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 2.1.6
+**Release:** 2.1.7
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -142,7 +142,7 @@ Parameters:
 
 | Parameter | Type | Beschrijving |
 |-----------|------|-------------|
-| `workspace_path` | string | Verplicht absoluut pad naar de workspace van de hoofdchat |
+| `workspace_path` | string | Verplicht absoluut pad naar de projectworkspace van de hoofdchat; een Copilot-sessieartefactpad wordt automatisch naar die projectworkspace opgelost |
 | `component_path` | string | Relatief componentpad (met leading `\`) |
 | `component_id` | string | Component-ID als alternatief voor pad |
 | `with_backups` | bool | Backups meenemen (standaard: false) |
@@ -202,8 +202,11 @@ Uitgecheckte bestanden worden gespiegeld naar:
 
 De MCP-server start vanuit de plugininstallatiemap. Elke checkout vereist
 afzonderlijk de absolute `workspace_path` van de hoofdchat en spiegelt alleen
-naar die locatie. Daardoor kan een checkout nooit in de plugininstallatiemap
-onder `.copilot` terechtkomen.
+naar die locatie. Als een Copilot-sessieartefactpad onder
+`.copilot\session-state\...\files` wordt meegegeven, lost de runtime deze op
+naar de `cwd` uit de sessiemetadata. Daardoor komt de checkout in de
+projectworkspace van de sessie terecht, nooit in de plugininstallatiemap of de
+sessieartefactmap.
 
 ---
 
