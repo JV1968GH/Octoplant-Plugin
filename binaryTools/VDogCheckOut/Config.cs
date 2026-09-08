@@ -33,7 +33,7 @@ internal static class ConfigLoader
             CredentialsManagerClient.ReadSetting(CredentialTarget, "Portnumber"));
         var sslVerify = false;
         var projectRoot = ResolveWorkspacePath(workspacePath);
-        var checkoutPath = Path.Combine(projectRoot, "octoPlantCheckouts");
+        var checkoutPath = projectRoot;
 
         return new AppConfig(
             credential.UserName,

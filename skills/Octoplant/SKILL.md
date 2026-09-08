@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 2.1.8
+version: 2.1.9
 description: "OctoPlant/versiondog MCP-kennis voor read-only projectnavigatie in de gedeelde serverarchive en CLI-checkout. Gebruik voor installaties, kostenplaatsen, PLC-projecten, ARCHIVE, RWZI's, PS, resolve_project en VDogAutoCheckOut.exe."
 ---
 
@@ -13,8 +13,8 @@ Implementeer nooit check-in, maintenance mode of andere schrijfbewerkingen.
 
 De gedeelde RWZI-serverarchive is hardgecodeerd als uitsluitend een bron voor
 padresolutie. Maak, wijzig, verwijder, kopieer of spiegel nooit bestanden of
-mappen op deze share. Gebruik voor check-outs en bewerkingen uitsluitend de
-lokale clientarchive en `octoPlantCheckouts` in de sessieworkspace.
+mappen op deze share. Gebruik voor check-outs en bewerkingen uitsluitend de lokale clientarchive en de
+door de handoff aangewezen initiële promptworkspace.
 
 ## Verplicht begin van elke OctoPlant-sessie
 

@@ -28,7 +28,7 @@ class ServerInitializationTests(unittest.TestCase):
 
         self.assertSetEqual(
             tool_names,
-            {"authenticate", "checkout_all", "checkout_component", "resolve_project"},
+            {"authenticate", "checkout_component", "resolve_project"},
         )
 
     def test_starts_with_configuration_tool_when_runtime_is_missing(self) -> None:
@@ -55,42 +55,8 @@ class WorkspaceResolutionTests(unittest.TestCase):
         with self.assertRaises(OctoplantConfigError):
             OctoplantClient._resolve_workspace_path(r"C:\does-not-exist")
 
-    def test_uses_active_copilot_session_workspace(self) -> None:
-        session_id = "12345678-1234-1234-1234-123456789abc"
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root)
-            project_workspace = root_path / "OT-Engineer"
-            metadata_path = (
-                root_path
-                / ".copilot"
-                / "session-state"
-                / session_id
-                / "workspace.yaml"
-            )
-            project_workspace.mkdir()
-            metadata_path.parent.mkdir(parents=True)
-            metadata_path.write_text(
-                f"cwd: {project_workspace}\n",
-                encoding="utf-8",
-            )
-
-            with (
-                patch.dict(
-                    "src.client.os.environ",
-                    {"COPILOT_AGENT_SESSION_ID": session_id},
-                    clear=True,
-                ),
-                patch("src.client.Path.home", return_value=root_path),
-            ):
-                self.assertEqual(
-                    OctoplantClient._resolve_workspace_path(
-                        r"C:\temporary-artifacts\octoplant"
-                    ),
-                    project_workspace.resolve(),
-                )
-
     @patch.dict("src.client.os.environ", {}, clear=True)
-    def test_checkout_mirrors_to_the_supplied_workspace(self) -> None:
+    def test_checkout_mirrors_to_the_handoff_installation_directory(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()
             resolved_workspace = Path(workspace).resolve()
@@ -102,6 +68,8 @@ class WorkspaceResolutionTests(unittest.TestCase):
                 result = asyncio.run(
                     client.checkout_component(
                         workspace,
+                        installation_name="Example installation",
+                        cost_center="100026",
                         component_path=r"\{root}\{installation}\{plc-project}",
                     )
                 )
@@ -113,18 +81,60 @@ class WorkspaceResolutionTests(unittest.TestCase):
                     client._vdogcheckout_exe,
                     "checkout",
                     "--workspace",
-                    str(resolved_workspace),
+                    str(
+                        resolved_workspace
+                        / "PLC-projecten"
+                        / "Example installation - 100026"
+                    ),
                 ],
             )
             self.assertEqual(run.call_args.kwargs["cwd"], client.runtime_path)
             self.assertEqual(
                 Path(result["checkout_path"]),
-                resolved_workspace / "octoPlantCheckouts",
+                resolved_workspace
+                / "PLC-projecten"
+                / "Example installation - 100026",
+            )
+            self.assertEqual(
+                Path(result["artifact_path"]),
+                resolved_workspace
+                / "PLC-projecten"
+                / "Example installation - 100026"
+                / "{root}"
+                / "{installation}"
+                / "{plc-project}",
             )
             self.assertNotEqual(
                 Path(result["checkout_path"]).parent,
                 Path(__file__).resolve().parents[1],
             )
+
+    def test_checkout_uses_only_available_installation_identifier(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            self.assertEqual(
+                OctoplantClient._resolve_checkout_root(workspace, None, "100026"),
+                Path(workspace).resolve() / "PLC-projecten" / "100026",
+            )
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_checkout_returns_not_found_without_broad_fallback(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            with patch(
+                "src.client.subprocess.run",
+                return_value=subprocess.CompletedProcess(args=[], returncode=2),
+            ) as run:
+                result = asyncio.run(
+                    client.checkout_component(
+                        workspace,
+                        installation_name="Example installation",
+                        cost_center=None,
+                        component_path=r"\{root}\{installation}\{missing-project}",
+                    )
+                )
+
+            self.assertEqual(result["status"], "not_found")
+            self.assertNotIn("--all", run.call_args.args[0])
 
 
 if __name__ == "__main__":

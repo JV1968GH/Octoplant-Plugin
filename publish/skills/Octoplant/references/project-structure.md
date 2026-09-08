@@ -11,8 +11,9 @@ named pipe. Ze staan onder hoofdkaart `Octoplant`:
 
 De gedeelde archive is vast ingebouwd en wordt nooit beschreven door de plugin.
 Check-out gebruikt uitsluitend de lokale `OCTOPLANT_CLIENT_ARCHIVE_PATH`;
-mirroracties schrijven uitsluitend naar `octoPlantCheckouts` onder de verplichte
-`workspace_path` van de hoofdchat, niet onder de plugininstallatiemap.
+mirroracties schrijven uitsluitend naar `PLC-projecten` onder de verplichte
+`workspace_path` uit de initiële handoff, niet onder een child-sessionworkspace
+of de plugininstallatiemap.
 
 De versiondog-client staat vast op
 `C:\Program Files (x86)\vdogClient`; de wrapper gebruikt geen alternatieve

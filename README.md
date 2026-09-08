@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 2.1.8
+**Release:** 2.1.9
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -112,6 +112,8 @@ Check een specifiek PLC-component of project uit vanuit OctoPlant.
 ```
 checkout_component(
     workspace_path = "C:\\pad\\naar\\de\\hoofdchat-workspace",
+    installation_name = "{installatie-naam}",
+    cost_center = "{kostenplaats}",
     component_path = "\RWZI's\{installatiemap}\{PLC-project}"
 )
 ```
@@ -123,22 +125,15 @@ Parameters:
 
 | Parameter | Type | Beschrijving |
 |-----------|------|-------------|
-| `workspace_path` | string | Verplicht absoluut pad naar de projectmap van de hoofdchat; tijdens een Copilot-sessie bepaalt de runtime deze hoofdchat-workspace automatisch |
+| `workspace_path` | string | Verplicht absoluut pad uit de initiële agent-handoff; nooit een child-sessionworkspace of plugininstallatiemap |
+| `installation_name` | string | Installatienaam uit de handoff; met kostenplaats vormt dit de artifactmap |
+| `cost_center` | string | Kostenplaats uit de handoff; met installatienaam vormt dit de artifactmap |
 | `component_path` | string | Relatief componentpad (met leading `\`) |
-| `component_id` | string | Component-ID als alternatief voor pad |
 | `with_backups` | bool | Backups meenemen (standaard: false) |
 | `number_of_archives` | int | Aantal archives (0 = alle, standaard 1) |
 | `version` | int | Specifiek versienummer (standaard: huidig) |
 | `with_std_libs` | bool | Standaardbibliotheken meenemen |
 | `comment` | string | Opmerking in het CheckIn-CheckOut-Log |
-
-### `checkout_all`
-Check alle toegankelijke componenten uit.
-
-```
-checkout_all()
-checkout_all(with_backups=true)
-```
 
 ### `resolve_project`
 Roep deze tool aan bij de start van elke OctoPlant-sessie, vóór een check-out.
@@ -178,14 +173,14 @@ bekende installatie- of voorbeeldpaden als invoer voor een checkout: roep eerst
 Uitgecheckte bestanden worden gespiegeld naar:
 
 ```
-{workspace}\octoPlantCheckouts\{componentpad}
+{workspace}\PLC-projecten\{installatie-naam} - {kostenplaats}\{componentpad}
 ```
 
-De MCP-server start vanuit de plugininstallatiemap. Tijdens een Copilot-sessie
-leest hij de hoofdchat-workspace uit de metadata van de actieve sessie en
-spiegelt alleen naar die locatie. Daardoor kan een meegegeven artefact- of
-uitvoermap de bestemming niet wijzigen. Buiten Copilot blijft de expliciete
-absolute `workspace_path` verplicht.
+De MCP-server start vanuit de plugininstallatiemap, maar gebruikt uitsluitend
+de initiële handoff-workspace als artifactroot. Wanneer maar een van
+installatienaam of kostenplaats beschikbaar is, gebruikt hij alleen die waarde
+als mapnaam. Een niet gevonden PLC-project geeft `status: not_found` terug;
+de plugin probeert nooit een bredere checkout als fallback.
 
 ---
 
@@ -214,7 +209,7 @@ Octoplant-Plugin/
 │   ├── client.py                # OctoplantClient (archive-scan + CLI, geen credentials)
 │   ├── navigation.py            # Read-only resolver voor de serverarchive
 │   └── tools/
-│       ├── checkout.py          # checkout_component, checkout_all
+│       ├── checkout.py          # checkout_component
 │       └── navigation.py        # resolve_project
 ├── binaryTools/
 │   ├── CredentialsManager/     # Gepinde Git-submodule (buildafhankelijkheid)
@@ -227,7 +222,7 @@ Octoplant-Plugin/
 │       ├── Checkout.cs
 │       ├── Config.cs
 │       └── CredentialsManagerClient.cs
-├── octoPlantCheckouts/          # Lokale mirror van uitgecheckte componenten
+├── PLC-projecten/               # Lokale mirror van uitgecheckte componenten, per installatie
 ├── assets/
 │   └── Octoplant.png
 └── .mcp.json                    # MCP-serverregistratie

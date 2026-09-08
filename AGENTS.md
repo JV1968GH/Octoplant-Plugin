@@ -18,7 +18,7 @@ Het doel blijft read-only toegang tot OctoPlant/versiondog (checkout + export) v
 - `scripts/` = launcher + installatiescripts
 - `assets/` = plugin-assets (o.a. icoon)
 - `binaryTools/` = lokale helper binaries en source
-- `octoPlantCheckouts/` = lokale outputmap voor uitgecheckte componenten
+- `PLC-projecten/` = lokale outputmap voor uitgecheckte componenten, per installatie
 - `skills/` = skilldefinities en referenties
 - `.mcp.json` = MCP-registratie voor de plugin
 

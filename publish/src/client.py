@@ -2,7 +2,6 @@
 
 import asyncio
 import os
-import re
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -61,11 +60,7 @@ class OctoplantClient:
 
     @staticmethod
     def _resolve_workspace_path(workspace_path: str) -> Path:
-        """Resolve the active Copilot session workspace or an explicit fallback."""
-        session_workspace = OctoplantClient._resolve_active_session_workspace()
-        if session_workspace is not None:
-            return session_workspace
-
+        """Resolve the initial prompt workspace supplied by the agent handoff."""
         if not isinstance(workspace_path, str):
             raise OctoplantConfigError(
                 "workspace_path must reference an existing absolute workspace directory."
@@ -85,38 +80,38 @@ class OctoplantClient:
         return workspace
 
     @staticmethod
-    def _resolve_active_session_workspace() -> Optional[Path]:
-        """Read the main chat workspace from the active Copilot session metadata."""
-        session_id = os.environ.get("COPILOT_AGENT_SESSION_ID")
-        if not session_id:
-            return None
-        if not re.fullmatch(
-            r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
-            session_id,
-            flags=re.IGNORECASE,
-        ):
-            raise OctoplantConfigError("The active Copilot session identifier is invalid.")
-
-        metadata_path = (
-            Path.home() / ".copilot" / "session-state" / session_id / "workspace.yaml"
-        )
-        if not metadata_path.is_file():
+    def _installation_directory_name(
+        installation_name: Optional[str], cost_center: Optional[str]
+    ) -> str:
+        """Build a stable installation directory from explicit handoff metadata."""
+        values = [
+            value.strip()
+            for value in (installation_name, cost_center)
+            if isinstance(value, str) and value.strip()
+        ]
+        if not values:
             raise OctoplantConfigError(
-                "The active Copilot session has no workspace metadata."
+                "installation_name or cost_center is required for the checkout destination."
             )
+        if any(Path(value).name != value or value in {".", ".."} for value in values):
+            raise OctoplantConfigError(
+                "installation_name and cost_center must be single directory names."
+            )
+        return " - ".join(values)
 
-        for line in metadata_path.read_text(encoding="utf-8-sig").splitlines():
-            key, separator, value = line.partition(":")
-            if key == "cwd" and separator:
-                workspace = Path(os.path.expandvars(value.strip())).expanduser()
-                if workspace.is_absolute() and workspace.is_dir():
-                    resolved_workspace = workspace.resolve()
-                    if resolved_workspace != _PROJECT_ROOT:
-                        return resolved_workspace
-                break
-
-        raise OctoplantConfigError(
-            "The active Copilot session has no valid project workspace."
+    @classmethod
+    def _resolve_checkout_root(
+        cls,
+        workspace_path: str,
+        installation_name: Optional[str],
+        cost_center: Optional[str],
+    ) -> Path:
+        """Place checkouts below the initial prompt workspace, never a child session."""
+        workspace = cls._resolve_workspace_path(workspace_path)
+        return (
+            workspace
+            / "PLC-projecten"
+            / cls._installation_directory_name(installation_name, cost_center)
         )
 
     @staticmethod
@@ -129,8 +124,9 @@ class OctoplantClient:
     async def checkout_component(
         self,
         workspace_path: str,
+        installation_name: Optional[str],
+        cost_center: Optional[str],
         component_path: Optional[str] = None,
-        component_id: Optional[str] = None,
         with_backups: bool = False,
         number_of_archives: int = 1,
         version: Optional[int] = None,
@@ -138,21 +134,29 @@ class OctoplantClient:
         comment: Optional[str] = None,
     ) -> dict[str, Any]:
         """Check out a component or folder through the native versiondog CLI."""
-        checkout_workspace = self._resolve_workspace_path(workspace_path)
-        export_path = str(checkout_workspace / "octoPlantCheckouts")
+        checkout_root = self._resolve_checkout_root(
+            workspace_path, installation_name, cost_center
+        )
+        if component_path is None:
+            raise OctoplantConfigError(
+                "component_path from resolve_project is required; broad checkout fallback is disabled."
+            )
+        component_parts = tuple(
+            part for part in component_path.replace("/", "\\").split("\\") if part
+        )
+        if not component_parts or any(part in {".", ".."} for part in component_parts):
+            raise OctoplantConfigError(
+                "component_path must be a relative Octoplant component path."
+            )
+        artifact_path = checkout_root.joinpath(*component_parts)
         args: list[str] = [
             self._vdogcheckout_exe,
             "checkout",
             "--workspace",
-            str(checkout_workspace),
+            str(checkout_root),
         ]
 
-        if component_id:
-            args += ["--id", component_id]
-        elif component_path is not None:
-            args.append(component_path)
-        else:
-            args.append("--all")
+        args.append(component_path)
 
         if with_backups:
             args.append("--backups")
@@ -172,13 +176,17 @@ class OctoplantClient:
             cwd=self.runtime_path,
         )
 
-        return {
+        response = {
             "returncode": result.returncode,
             "status": _CHECKOUT_RETURN_CODES.get(
                 result.returncode, f"Onbekende code ({result.returncode})"
             ),
-            "checkout_path": export_path,
+            "checkout_path": str(checkout_root),
+            "artifact_path": str(artifact_path),
             "stdout": "",
             "stderr": "",
             "binary_output_suppressed": True,
         }
+        if result.returncode == 2:
+            response["status"] = "not_found"
+        return response

@@ -1,19 +1,21 @@
 # Check-out naar de sessieworkspace
 
 `checkout_component` is read-only voor OctoPlant en vereist de absolute
-`workspace_path` van de hoofdchat. Tijdens een Copilot-sessie leidt de runtime
-de bestemming af uit de actieve sessiemetadata, zodat een artefact- of
-uitvoermap deze niet kan overschrijven. Na een geslaagde checkout
+`workspace_path` uit de initiële agent-handoff, met de beschikbare
+`installation_name` en/of `cost_center`. Child-sessionworkspaces en
+plugininstallatiemappen zijn nooit geldig als bestemming. Na een geslaagde checkout
 spiegelt `VDogCheckOut.exe` het component met `robocopy /MIR` van de lokale
 clientarchive naar:
 
 ```text
-{workspace}\octoPlantCheckouts\{component_path}
+{workspace}\PLC-projecten\{installatienaam} - {kostenplaats}\{component_path}
 ```
 
-De MCP-server draait vanuit de plugininstallatiemap, maar gebruikt uitsluitend
-de verplichte `workspace_path` als bestemming: `octoPlantCheckouts` onder de
-workspace van de hoofdchat, nooit onder de plugininstallatiemap.
+Wanneer alleen een installatienaam of kostenplaats beschikbaar is, is dat de
+naam van de map onder `PLC-projecten`. De tool retourneert zowel
+`checkout_path` (de installatiemap) als `artifact_path` (de componentmap).
+Een bestaand maar niet gevonden PLC-project retourneert `status: not_found`;
+de tool voert nooit een bredere checkout uit.
 
 Gebruik voor de tool altijd `component_path` uit `resolve_project`; voeg de
 fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.
