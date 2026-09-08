@@ -5,10 +5,9 @@
 
 .DESCRIPTION
     1. Zoekt een geschikte Python 3.11+-runtime
-    2. Maakt of hergebruikt de plugin-lokale .venv
+    2. Maakt of hergebruikt de gebruiker-lokale runtime-venv
     3. Installeert Python-dependencies
     4. Controleert de meegeleverde release-builds
-    5. Maakt een leeg .env-bestand aan (als nog niet aanwezig)
 
 .NOTES
     Vereisten:
@@ -16,12 +15,21 @@
 #>
 
 [CmdletBinding()]
-param()
+param(
+    [string]$PythonPath
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-$VenvPython = Join-Path $Root ".venv\Scripts\python.exe"
+$PluginId = "octoplant"
+if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+    throw "LOCALAPPDATA is unavailable. Start PowerShell in a normal user session and run the installer again."
+}
+
+$RuntimeRoot = Join-Path $env:LOCALAPPDATA "AI\Plugins\$PluginId\runtime"
+$VenvPath = Join-Path $RuntimeRoot "venv"
+$VenvPython = Join-Path $VenvPath "Scripts\python.exe"
 
 function Write-Step([string]$msg) {
     Write-Host ""
@@ -52,6 +60,17 @@ function Test-PythonRuntime([string]$Command, [string[]]$Arguments) {
 }
 
 function Find-PythonRuntime {
+    if (-not [string]::IsNullOrWhiteSpace($PythonPath)) {
+        $resolvedPython = Resolve-Path -LiteralPath $PythonPath -ErrorAction SilentlyContinue
+        if (-not $resolvedPython -or -not (Test-PythonRuntime $resolvedPython.Path @())) {
+            Abort "De opgegeven Python-runtime is niet bruikbaar: $PythonPath. Gebruik Python 3.11 of hoger."
+        }
+        return @{
+            Command = $resolvedPython.Path
+            Arguments = @()
+        }
+    }
+
     $py = Get-Command py -ErrorAction SilentlyContinue
     if ($py -and (Test-PythonRuntime $py.Source @("-3"))) {
         return @{
@@ -71,62 +90,63 @@ function Find-PythonRuntime {
     return $null
 }
 
-# --- 1. Python en lokale virtuele omgeving ---
+# --- 1. Python en gebruiker-lokale virtuele omgeving ---
 Write-Step "Python 3.11+ controleren"
 $PythonRuntime = Find-PythonRuntime
 if (-not $PythonRuntime) {
-    Abort "Python 3.11+ niet gevonden. Installeer Python en maak 'py -3' of 'python' beschikbaar."
+    Abort "Python 3.11+ niet gevonden. Installeer Python voor de huidige gebruiker en maak 'py -3' of 'python' beschikbaar."
 }
 Write-OK "Python runtime gevonden: $($PythonRuntime.Command) $($PythonRuntime.Arguments -join ' ')"
 
 if (-not (Test-Path $VenvPython -PathType Leaf)) {
-    Write-Step "Plugin-lokale .venv aanmaken"
-    & $PythonRuntime.Command @($PythonRuntime.Arguments) -m venv (Join-Path $Root ".venv")
-    if ($LASTEXITCODE -ne 0) { Abort "Aanmaken van de plugin-lokale .venv mislukt." }
-    Write-OK "Plugin-lokale .venv aangemaakt."
+    Write-Step "Gebruiker-lokale MCP-runtime aanmaken"
+    New-Item -ItemType Directory -Path $RuntimeRoot -Force | Out-Null
+    & $PythonRuntime.Command @($PythonRuntime.Arguments) -m venv $VenvPath
+    if ($LASTEXITCODE -ne 0) { Abort "Aanmaken van de gebruiker-lokale runtime mislukt: $VenvPath" }
+    Write-OK "Gebruiker-lokale runtime aangemaakt: $VenvPath"
 } else {
-    Write-OK "Plugin-lokale .venv bestaat al."
+    Write-OK "Gebruiker-lokale runtime bestaat al: $VenvPath"
 }
 
 # --- 2. Python dependencies ---
 Write-Step "Python-dependencies installeren"
-& $VenvPython -m pip install -e "$Root" --quiet
-if ($LASTEXITCODE -ne 0) { Abort "pip install mislukt." }
+& $VenvPython -m pip install --disable-pip-version-check --upgrade "$Root" --quiet
+if ($LASTEXITCODE -ne 0) {
+    Abort "pip install mislukt. Controleer de netwerk- of proxytoegang en voer het script opnieuw uit."
+}
+& $VenvPython -c "from mcp.server.fastmcp import FastMCP"
+if ($LASTEXITCODE -ne 0) {
+    Abort "FastMCP kon niet uit de gebruiker-lokale runtime worden geladen. Voer het script opnieuw uit."
+}
 Write-OK "Dependencies geinstalleerd."
 
 # --- 3. Runtimepakket ---
-$buildScript = Join-Path $Root "binaryTools\VDogCheckOut\build.ps1"
 $wrapperExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\VDogCheckOut.exe"
 $credentialsExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.exe"
-if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentialsExe -PathType Leaf)) {
-    if (-not (Test-Path (Join-Path $Root ".git") -PathType Container)) {
-        Abort "Runtimepakket onvolledig. Installeer de plugin opnieuw via de marketplace."
-    }
-
-    Write-Step "Runtimepakket vanuit broncode bouwen"
-    & $buildScript
-    if ($LASTEXITCODE -ne 0) {
-        Abort "Build van het runtimepakket mislukt."
-    }
+$credentialsPreferences = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.preferences.json"
+$credentialsSqliteNative = Join-Path $Root "binaryTools\VDogCheckOut\publish\e_sqlite3.dll"
+if (
+    -not (Test-Path $wrapperExe -PathType Leaf) -or
+    -not (Test-Path $credentialsExe -PathType Leaf) -or
+    -not (Test-Path $credentialsPreferences -PathType Leaf) -or
+    -not (Test-Path $credentialsSqliteNative -PathType Leaf)
+) {
+    Abort "Runtimepakket onvolledig. Installeer de plugin opnieuw via de marketplace; de installatiemap blijft read-only."
 }
 
 Write-Step "Runtimepakket controleren"
-if (-not (Test-Path $wrapperExe -PathType Leaf) -or -not (Test-Path $credentialsExe -PathType Leaf)) {
-    Abort "Runtimepakket is onvolledig na installatie."
+if (
+    -not (Test-Path $wrapperExe -PathType Leaf) -or
+    -not (Test-Path $credentialsExe -PathType Leaf) -or
+    -not (Test-Path $credentialsPreferences -PathType Leaf) -or
+    -not (Test-Path $credentialsSqliteNative -PathType Leaf)
+) {
+    Abort "Runtimepakket is onvolledig. Installeer de plugin opnieuw via de marketplace."
 }
 Write-OK "VDogCheckOut.exe aanwezig: $wrapperExe"
 Write-OK "CredentialsManager.exe aanwezig: $credentialsExe"
-
-# --- 4. .env aanmaken ---
-Write-Step ".env configuratie"
-$envFile  = Join-Path $Root ".env"
-if (Test-Path $envFile) {
-    Write-OK ".env bestaat al (niet overschreven)."
-} else {
-    Copy-Item (Join-Path $Root ".env.example") $envFile
-    Write-Warn ".env aangemaakt vanuit .env.example."
-    Write-Warn "Vul de lokale configuratie in volgens de interne procedure."
-}
+Write-OK "CredentialsManager-instellingen aanwezig: $credentialsPreferences"
+Write-OK "SQLite native library aanwezig: $credentialsSqliteNative"
 
 # --- Klaar ---
 Write-Host ""
@@ -134,9 +154,9 @@ Write-Host "======================================================" -ForegroundC
 Write-Host "  Installatie voltooid." -ForegroundColor Green
 Write-Host "======================================================" -ForegroundColor Green
 Write-Host ""
+Write-Host "MCP-runtime: $VenvPath"
 Write-Host "Volgende stappen:" -ForegroundColor White
-Write-Host "  1. Pas .env aan voor dit toestel (als nog niet gedaan)"
-Write-Host "  2. Maak de Windows-referentie aan volgens de interne procedure"
-Write-Host "  3. Test: .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe login"
-Write-Host "  4. Open GitHub Copilot Desktop en schakel de plugin in"
+Write-Host "  1. Maak de Windows-referentie en Octoplant-instellingen aan volgens de interne procedure"
+Write-Host "  2. Test: .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe login"
+Write-Host "  3. Open GitHub Copilot Desktop en schakel de plugin in"
 Write-Host ""

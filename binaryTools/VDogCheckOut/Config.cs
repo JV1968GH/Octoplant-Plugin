@@ -4,7 +4,7 @@ using System.IO;
 
 namespace VDogCheckOut;
 
-/// <summary>Gecombineerde applicatieconfiguratie uit .env en Windows Credential Manager.</summary>
+/// <summary>Gecombineerde applicatieconfiguratie uit Windows Credential Manager.</summary>
 internal sealed record AppConfig(
     string User,
     string Password,
@@ -22,21 +22,18 @@ internal static class ConfigLoader
     private const string CredentialTarget = "Octoplant";
     private const string VdogClientPath = @"C:\Program Files (x86)\vdogClient";
 
-    public static AppConfig Load(string? envPath = null)
+    public static AppConfig Load(string? workspacePath = null)
     {
-        var envFile = envPath ?? FindFileUpward(".env")
-            ?? throw new ConfigException("Lokale configuratie ontbreekt.");
-
-        var env = LoadEnvFile(envFile);
-        var projectRoot = Path.GetFullPath(Path.GetDirectoryName(envFile)!);
         var credential = CredentialsManagerClient.ReadGenericCredential(CredentialTarget);
         var vdogClientPath = ResolveVdogClientPath();
-        var archivePath = ResolvePath(GetRequired(env, "OCTOPLANT_CLIENT_ARCHIVE_PATH"), projectRoot);
-        var server = GetRequired(env, "OCTOPLANT_SERVER").TrimEnd('/');
+        var archivePath = ResolvePath(CredentialsManagerClient.ReadSetting(
+            CredentialTarget, "OCTOPLANT_CLIENT_ARCHIVE_PATH"));
+        var server = BuildServerUri(
+            CredentialsManagerClient.ReadSetting(CredentialTarget, "URL"),
+            CredentialsManagerClient.ReadSetting(CredentialTarget, "Portnumber"));
         var sslVerify = false;
-        var checkoutPath = Path.Combine(
-            Path.GetFullPath(Directory.GetCurrentDirectory()),
-            "octoPlantCheckouts");
+        var projectRoot = ResolveWorkspacePath(workspacePath);
+        var checkoutPath = Path.Combine(projectRoot, "octoPlantCheckouts");
 
         return new AppConfig(
             credential.UserName,
@@ -58,52 +55,39 @@ internal static class ConfigLoader
         throw new ConfigException("De vereiste versiondog-client is niet beschikbaar.");
     }
 
-    private static string? FindFileUpward(string fileName)
+    private static string BuildServerUri(string server, string portNumber)
     {
-        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (directory is not null)
+        if (!Uri.TryCreate(server.Trim(), UriKind.Absolute, out var serverUri)
+            || (!string.Equals(serverUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(serverUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            || !int.TryParse(portNumber, out var port)
+            || port is < 1 or > 65535)
         {
-            var candidate = Path.Combine(directory.FullName, fileName);
-            if (File.Exists(candidate))
-                return candidate;
-            directory = directory.Parent;
+            throw new ConfigException("De Octoplant-instellingen zijn ongeldig.");
         }
 
-        return null;
+        var builder = new UriBuilder(serverUri) { Port = port };
+        return builder.Uri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
     }
 
-    private static Dictionary<string, string> LoadEnvFile(string path)
-    {
-        var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var line in File.ReadLines(path))
-        {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith('#') || !trimmed.Contains('='))
-                continue;
-
-            var separator = trimmed.IndexOf('=');
-            var key = trimmed[..separator].Trim();
-            var value = trimmed[(separator + 1)..].Trim();
-            if (!string.IsNullOrEmpty(key))
-                values[key] = value;
-        }
-
-        return values;
-    }
-
-    private static string ResolvePath(string value, string projectRoot)
+    private static string ResolvePath(string value)
     {
         var expanded = Environment.ExpandEnvironmentVariables(value.Trim());
-        return Path.IsPathRooted(expanded)
-            ? Path.GetFullPath(expanded)
-            : Path.GetFullPath(Path.Combine(projectRoot, expanded));
+        if (string.IsNullOrWhiteSpace(expanded))
+            throw new ConfigException("De Octoplant-instellingen zijn ongeldig.");
+
+        return Path.GetFullPath(expanded);
     }
 
-    private static string GetRequired(Dictionary<string, string> env, string key)
+    private static string ResolveWorkspacePath(string? workspacePath)
     {
-        if (env.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value))
-            return value;
-        throw new ConfigException("Lokale configuratie is onvolledig.");
+        var path = string.IsNullOrWhiteSpace(workspacePath)
+            ? Directory.GetCurrentDirectory()
+            : workspacePath;
+        if (!Path.IsPathFullyQualified(path) || !Directory.Exists(path))
+            throw new ConfigException("De opgegeven workspace bestaat niet of is ongeldig.");
+
+        return Path.GetFullPath(path);
     }
 }
 

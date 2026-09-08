@@ -18,15 +18,15 @@ src/__pycache__
 */__pycache__
 *__pycache__
 
-# Configuratie (machine-specifiek)
-.env
-.env*
-!.env.example
-
 # Lokale, read-only uitgecheckte projectkopieën
 octoPlantCheckouts/
+*.sta
+*.stu
+*.xef
+*.zef
 
 # Python build-artefacten
+.venv/
 *.egg-info/
 dist/
 build/

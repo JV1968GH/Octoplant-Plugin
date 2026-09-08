@@ -2,7 +2,7 @@
 
 Entry point: python server.py (stdio transport voor GitHub Copilot Desktop).
 
-Laadt configuratie uit .env in dezelfde map.
+De wrapper leest configuratie veilig uit CredentialsManager.
 SCOPE: uitsluitend navigatie en check-out — geen check-in, geen maintenance mode.
 """
 
@@ -12,11 +12,6 @@ import sys
 
 # Voeg projectmap toe aan Python-pad zodat 'src' importeerbaar is
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from dotenv import load_dotenv
-
-# Laad .env uit dezelfde map als dit script
-load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 from mcp.server.fastmcp import FastMCP
 
@@ -40,7 +35,7 @@ except Exception:
     pass
 
 mcp = FastMCP(
-    "MCP_OP",
+    "MCP_Octoplant",
     instructions=(
         "MCP server voor OctoPlant/versiondog. "
         "Biedt read-only toegang: navigatie en check-out van componenten. "
@@ -75,13 +70,11 @@ try:
             subprocess.run,
             [
                 client._vdogcheckout_exe,
-                "--env",
-                str(client._env_file),
                 "login",
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            cwd=client.workspace_path,
+            cwd=client.runtime_path,
         )
         return {
             "success": result.returncode == 0,
@@ -90,17 +83,17 @@ try:
 
 except OctoplantConfigError:
     # Server start wel op maar tools geven een configuratiefout terug
-    # zodat de MCP-client de server niet afwijst bij ontbrekende .env
+    # zodat de MCP-client de server niet afwijst bij een ontbrekende runtime.
     import sys
 
     print("[Octoplant] Waarschuwing: lokale configuratie is onvolledig.", file=sys.stderr)
 
     @mcp.tool()
     def configuratie_ontbreekt() -> str:
-        """Geeft aan dat de .env configuratie ontbreekt of onvolledig is."""
+        """Geeft aan dat de Octoplant-runtime niet beschikbaar is."""
         return (
             "Octoplant MCP is niet geconfigureerd.\n"
-            "Maak een lokale .env-configuratie volgens .env.example."
+            "Installeer de plugin-runtime opnieuw."
         )
 
 

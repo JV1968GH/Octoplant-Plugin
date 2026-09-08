@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 0.8.0
+**Release:** 2.1.8
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -20,59 +20,57 @@ OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
 ## Installatie
 
-### Stap 1 — Marketplace toevoegen
+De marketplace is de ondersteunde installatieprocedure. Installeer de plugin
+niet handmatig vanuit een lokale map of via een CLI.
 
-1. Open **GitHub Copilot Desktop**.
-2. Open **Settings** en kies **Install**.
-3. Kies **Add marketplace** en vul `JV1968GH/OT-MarketPlace` in.
-4. Installeer **octoplant-plugin** en schakel de plugin in.
+1. Open in de zijbalk **Customize > Plugins**.
+2. Selecteer de geconfigureerde marketplace en zoek naar **Octoplant**.
+3. Selecteer de plugin en kies **Install** of **Activate**.
 
-### Stap 2 — Lokale Python-omgeving voorbereiden
+### Automatische lokale Python-runtime
 
-Installeer Python 3.11 of hoger. Zorg dat `py -3` of `python` in je huidige
-sessie beschikbaar is. Open daarna PowerShell in de geïnstalleerde pluginmap
-en voer uit:
+Bij de eerste start maakt de MCP-launcher automatisch de gebruiker-lokale
+runtime aan in `%LOCALAPPDATA%\AI\Plugins\octoplant\runtime\venv` en installeert
+hij de gedeclareerde Python-dependencies. Hiervoor moet Python 3.11 of hoger
+via `py -3` of `python` beschikbaar zijn. De voortgang en bruikbare fouten gaan
+naar stderr, voordat de MCP-stdio-verbinding start.
+
+De MCP-registratie gebruikt een expliciete `timeout` van `600000` milliseconden
+(tien minuten). Dat geeft een eerste installatie op een beheerd netwerk genoeg
+tijd om de venv en dependencies klaar te zetten voordat Copilot de tools
+opvraagt; normale starts gebruiken dezelfde registratie zonder extra wachttijd.
+
+De installatiemap mag read-only zijn: de launcher en het script schrijven
+uitsluitend naar de gebruiker-lokale runtime. Een .NET SDK is niet nodig op een clienttoestel; de
+wrapper is als self-contained release-build met de plugin meegeleverd. Ontbreken
+de release-artifacts, installeer de plugin dan opnieuw via de marketplace.
+
+De launcher gebruikt optioneel eerst `OCTOPLANT_MCP_PYTHON` en daarna de
+gebruiker-lokale runtime. Een override moet Python 3.11+ met `FastMCP` bevatten:
 
 ```powershell
-.\scripts\install.ps1
+$env:OCTOPLANT_MCP_PYTHON = "C:\Tools\Python\python.exe"
 ```
 
-Dit script:
-- Valideert het meegeleverde runtimepakket met `VDogCheckOut.exe` en `CredentialsManager.exe`
-- Bouwt beide exe's vanuit de gepinde `CredentialsManager`-submodule wanneer artifacts in een broncheckout ontbreken
-- Maakt een plugin-lokale `.venv` aan met de gevonden Python-runtime
-- Installeert alle Python-dependencies
-- Maakt een lokale `.env` op basis van `.env.example` als die nog niet bestaat
+### Octoplant-instellingen opslaan
 
-Een .NET SDK is niet nodig op een clienttoestel: de wrapper is als
-self-contained release-build met de plugin meegeleverd. De submodule is een
-buildafhankelijkheid; de runtime gebruikt de meegeleverde executable naast de
-wrapper.
+Open `CredentialsManager.exe` en selecteer de kaart **Octoplant**. Sla onder
+die hoofdkaart de volgende niet-geheime instellingen op volgens de interne
+procedure:
 
-### Stap 3 — `.env` aanpassen
-
-Kopieer geen credentials naar `.env`. Vul alleen de lokale verbindings- en
-padinstellingen in volgens de interne procedure:
-
-```ini
-OCTOPLANT_SERVER=
-OCTOPLANT_CLIENT_ARCHIVE_PATH=
-OCTOPLANT_PYTHON_PATH=
-```
+| Subsleutel | Betekenis |
+|---|---|
+| `URL` | Volledige HTTP(S)-server-URL zonder poortnummer. |
+| `Portnumber` | TCP-poort van de Octoplant-server. |
+| `OCTOPLANT_CLIENT_ARCHIVE_PATH` | Lokale clientarchive voor `VDogAutoCheckOut.exe`. |
 
 De wrapper leest gebruikersnaam, domein en wachtwoord uitsluitend uit de
 Windows Generic Credential met vaste targetnaam `Octoplant`. De meegeleverde
-`CredentialsManager.exe` draagt die gegevens uitsluitend via een private
-named pipe in het geheugen over; geen van deze gegevens wordt gelogd of via
-MCP doorgegeven.
+`CredentialsManager.exe` draagt credentials en instellingen uitsluitend via
+een private named pipe in het geheugen over; geen van deze gegevens wordt
+gelogd of via MCP doorgegeven.
 
-`OCTOPLANT_PYTHON_PATH` is optioneel en accepteert alleen een bestaand Python
-3.11+-pad waarin de server-dependencies geladen kunnen worden. Zonder deze override
-selecteert de launcher achtereenvolgens de plugin-lokale `.venv`, `py -3` en
-`python` op `PATH`. De launcher wijzigt geen user- of systeem-`PATH` en slaat
-geen interpreterpad op.
-
-### Stap 4 — Verbinding testen
+### Verbinding testen
 
 ```powershell
 .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe login
@@ -85,15 +83,16 @@ geen interpreterpad op.
 | `10` | Lokale configuratie of Windows-referentie ontbreekt |
 | `1000` | Authenticatie mislukt |
 
-### Stap 5 — Gebruiken in Copilot Desktop
+### Gebruiken in Copilot Desktop
 
-Open een nieuwe Copilot-chat. De plugin registreert **MCP_OP** via `.mcp.json`;
+Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `.mcp.json`;
 de server start automatisch wanneer de plugin is ingeschakeld.
 
 Bij problemen:
-1. Voer `.\scripts\install.ps1` opnieuw uit om de plugin-lokale `.venv` te herstellen.
-2. Controleer of zowel `VDogCheckOut.exe` als `CredentialsManager.exe` aanwezig zijn in `binaryTools\VDogCheckOut\publish\`.
-3. Test de verbinding éénmaal met `VDogCheckOut.exe login`.
+1. Controleer dat Python 3.11+ voor de huidige gebruiker beschikbaar is; start Copilot opnieuw zodat de launcher de runtime opnieuw kan maken.
+2. Installeer de plugin opnieuw via de marketplace als de runtime niet opnieuw kan worden gemaakt.
+3. Controleer of zowel `VDogCheckOut.exe` als `CredentialsManager.exe` aanwezig zijn in `binaryTools\VDogCheckOut\publish\`.
+4. Test de verbinding éénmaal met `VDogCheckOut.exe login`.
 
 ---
 
@@ -112,6 +111,7 @@ Check een specifiek PLC-component of project uit vanuit OctoPlant.
 
 ```
 checkout_component(
+    workspace_path = "C:\\pad\\naar\\de\\hoofdchat-workspace",
     component_path = "\RWZI's\{installatiemap}\{PLC-project}"
 )
 ```
@@ -123,6 +123,7 @@ Parameters:
 
 | Parameter | Type | Beschrijving |
 |-----------|------|-------------|
+| `workspace_path` | string | Verplicht absoluut pad naar de projectmap van de hoofdchat; tijdens een Copilot-sessie bepaalt de runtime deze hoofdchat-workspace automatisch |
 | `component_path` | string | Relatief componentpad (met leading `\`) |
 | `component_id` | string | Component-ID als alternatief voor pad |
 | `with_backups` | bool | Backups meenemen (standaard: false) |
@@ -180,16 +181,19 @@ Uitgecheckte bestanden worden gespiegeld naar:
 {workspace}\octoPlantCheckouts\{componentpad}
 ```
 
-Deze bestemming is vast en wordt afgeleid van de workspace waarin de
-MCP-server draait.
+De MCP-server start vanuit de plugininstallatiemap. Tijdens een Copilot-sessie
+leest hij de hoofdchat-workspace uit de metadata van de actieve sessie en
+spiegelt alleen naar die locatie. Daardoor kan een meegegeven artefact- of
+uitvoermap de bestemming niet wijzigen. Buiten Copilot blijft de expliciete
+absolute `workspace_path` verplicht.
 
 ---
 
 ## Beveiliging
 
-- Gebruikersnaam, domein en wachtwoord staan **nooit** in `.env` of de MCP-communicatie
+- Gebruikersnaam, domein, wachtwoord en Octoplant-instellingen staan **nooit** in bestanden in de pluginrepository of de MCP-communicatie
 - Credentials worden uitsluitend opgehaald uit Windows Credential Manager met vaste targetnaam `Octoplant` en zijn nooit zichtbaar voor de AI
-- `CredentialsManager.exe` geeft credentials alleen via een per aanvraag gemaakte private named pipe door; stdout, stderr, logs en MCP-responses bevatten nooit credentials
+- `CredentialsManager.exe` geeft credentials en instellingen alleen via een per aanvraag gemaakte private named pipe door; stdout, stderr, logs en MCP-responses bevatten nooit waarden
 - Authenticatie- en configuratiefouten geven uitsluitend gestandaardiseerde exitcodes; credentials, tokens en ruwe uitvoer van onderliggende binaries komen niet in logging of tool-responses
 - Bearer-tokens worden nooit gelogd of in tool-responses opgenomen
 - De plugin biedt uitsluitend **leesbewerkingen** — terugschrijven naar OctoPlant is geblokkeerd
@@ -201,12 +205,11 @@ MCP-server draait.
 ```
 Octoplant-Plugin/
 ├── server.py                    # MCP-server entry point
-├── .env                         # Lokale, niet-geversioneerde configuratie
-├── .env.example                 # Sjabloon zonder concrete waarden
 ├── pyproject.toml               # Python-dependencies
 ├── scripts/
 │   ├── install.ps1              # Eenmalig installatiescript
 │   └── start-mcp.cmd            # Launcher voor GitHub Copilot Desktop
+│                                  # gebruikt de user-local runtime, geen .venv in de pluginmap
 ├── src/
 │   ├── client.py                # OctoplantClient (archive-scan + CLI, geen credentials)
 │   ├── navigation.py            # Read-only resolver voor de serverarchive
@@ -229,3 +232,7 @@ Octoplant-Plugin/
 │   └── Octoplant.png
 └── .mcp.json                    # MCP-serverregistratie
 ```
+
+De registratie gebruikt `${PLUGIN_ROOT}\scripts\start-mcp.cmd` met een
+stdio-timeout van tien minuten; er zijn geen gebruikersspecifieke absolute
+paden in het pluginpakket.
