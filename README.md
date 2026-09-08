@@ -20,14 +20,14 @@ OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
 ## Installatie
 
-### Stap 1 — Marketplace toevoegen
+De marketplace is de ondersteunde installatieprocedure. Installeer de plugin
+niet handmatig vanuit een lokale map of via een CLI.
 
-1. Open **GitHub Copilot Desktop**.
-2. Open **Settings** en kies **Install**.
-3. Kies **Add marketplace** en vul `JV1968GH/OT-MarketPlace` in.
-4. Installeer **Octoplant** en schakel de plugin in.
+1. Open in de zijbalk **Customize > Plugins**.
+2. Selecteer de geconfigureerde marketplace en zoek naar **Octoplant**.
+3. Selecteer de plugin en kies **Install** of **Activate**.
 
-### Stap 2 — Automatische lokale Python-runtime
+### Automatische lokale Python-runtime
 
 Bij de eerste start maakt de MCP-launcher automatisch de gebruiker-lokale
 runtime aan in `%LOCALAPPDATA%\AI\Plugins\octoplant\runtime\venv` en installeert
@@ -40,29 +40,10 @@ De MCP-registratie gebruikt een expliciete `timeout` van `600000` milliseconden
 tijd om de venv en dependencies klaar te zetten voordat Copilot de tools
 opvraagt; normale starts gebruiken dezelfde registratie zonder extra wachttijd.
 
-De volgende handmatige installatie blijft beschikbaar om de runtime vooraf te
-maken of te herstellen:
-
-```powershell
-.\scripts\install.ps1
-```
-
-Dit script:
-- Valideert het meegeleverde runtimepakket met `VDogCheckOut.exe` en `CredentialsManager.exe`
-- Maakt de gebruiker-lokale runtime aan in `%LOCALAPPDATA%\AI\Plugins\octoplant\runtime\venv`
-- Installeert alle Python-dependencies
-- Verifieert dat de officiële Python MCP SDK (`FastMCP`) beschikbaar is
-
 De installatiemap mag read-only zijn: de launcher en het script schrijven
 uitsluitend naar de gebruiker-lokale runtime. Een .NET SDK is niet nodig op een clienttoestel; de
 wrapper is als self-contained release-build met de plugin meegeleverd. Ontbreken
 de release-artifacts, installeer de plugin dan opnieuw via de marketplace.
-
-Gebruik alleen bij een beheerde Python-installatie een specifieke runtime:
-
-```powershell
-.\scripts\install.ps1 -PythonPath "C:\Program Files\Python312\python.exe"
-```
 
 De launcher gebruikt optioneel eerst `OCTOPLANT_MCP_PYTHON` en daarna de
 gebruiker-lokale runtime. Een override moet Python 3.11+ met `FastMCP` bevatten:
@@ -71,7 +52,7 @@ gebruiker-lokale runtime. Een override moet Python 3.11+ met `FastMCP` bevatten:
 $env:OCTOPLANT_MCP_PYTHON = "C:\Tools\Python\python.exe"
 ```
 
-### Stap 3 — Octoplant-instellingen opslaan
+### Octoplant-instellingen opslaan
 
 Open `CredentialsManager.exe` en selecteer de kaart **Octoplant**. Sla onder
 die hoofdkaart de volgende niet-geheime instellingen op volgens de interne
@@ -89,7 +70,7 @@ Windows Generic Credential met vaste targetnaam `Octoplant`. De meegeleverde
 een private named pipe in het geheugen over; geen van deze gegevens wordt
 gelogd of via MCP doorgegeven.
 
-### Stap 4 — Verbinding testen
+### Verbinding testen
 
 ```powershell
 .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe login
@@ -102,14 +83,14 @@ gelogd of via MCP doorgegeven.
 | `10` | Lokale configuratie of Windows-referentie ontbreekt |
 | `1000` | Authenticatie mislukt |
 
-### Stap 5 — Gebruiken in Copilot Desktop
+### Gebruiken in Copilot Desktop
 
 Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `.mcp.json`;
 de server start automatisch wanneer de plugin is ingeschakeld.
 
 Bij problemen:
 1. Controleer dat Python 3.11+ voor de huidige gebruiker beschikbaar is; start Copilot opnieuw zodat de launcher de runtime opnieuw kan maken.
-2. Voer `.\scripts\install.ps1` uit om `%LOCALAPPDATA%\AI\Plugins\octoplant\runtime\venv` vooraf te herstellen.
+2. Installeer de plugin opnieuw via de marketplace als de runtime niet opnieuw kan worden gemaakt.
 3. Controleer of zowel `VDogCheckOut.exe` als `CredentialsManager.exe` aanwezig zijn in `binaryTools\VDogCheckOut\publish\`.
 4. Test de verbinding éénmaal met `VDogCheckOut.exe login`.
 
