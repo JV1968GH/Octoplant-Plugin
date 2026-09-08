@@ -1,7 +1,7 @@
 {
   "name": "octoplant",
   "description": "Read-only OctoPlant/versiondog projectnavigatie en checkout",
-  "version": "2.1.9",
+  "version": "2.2.0",
   "author": {
     "name": "Jan Verrept",
     "email": "admin@octoplant.local"
@@ -15,6 +15,9 @@
   ],
   "skills": [
     "skills/"
+  ],
+  "agents": [
+    "agents/"
   ],
   "mcpServers": ".mcp.json",
   "icon": "assets/Octoplant.png"

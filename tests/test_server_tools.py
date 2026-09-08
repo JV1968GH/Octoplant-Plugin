@@ -2,6 +2,7 @@
 
 import asyncio
 import importlib
+import json
 import subprocess
 import sys
 import tempfile
@@ -10,6 +11,30 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.client import OctoplantClient, OctoplantConfigError
+
+
+class PluginPackageTests(unittest.TestCase):
+    _root = Path(__file__).resolve().parents[1]
+    _profile_path = Path("agents") / "octoplant-specialist.agent.md"
+
+    def test_registers_the_specialist_agent_in_source_and_package(self) -> None:
+        source_manifest = json.loads((self._root / "plugin.json").read_text())
+        package_manifest = json.loads(
+            (self._root / "publish" / "plugin.json").read_text()
+        )
+
+        self.assertEqual(source_manifest["agents"], ["agents/"])
+        self.assertEqual(package_manifest["agents"], ["agents/"])
+
+    def test_publishes_the_same_specialist_agent_profile(self) -> None:
+        source_profile = (self._root / self._profile_path).read_text()
+        package_profile = (self._root / "publish" / self._profile_path).read_text()
+
+        self.assertEqual(source_profile, package_profile)
+        self.assertIn("name: octoplant-specialist", source_profile)
+        self.assertIn("exactly one read-only `octoplant.*` work_request", source_profile)
+        self.assertIn("correlation_id", source_profile)
+        self.assertIn("step_id", source_profile)
 
 
 class ServerInitializationTests(unittest.TestCase):

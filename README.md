@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 2.1.9
+**Release:** 2.2.0
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
