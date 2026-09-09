@@ -1,11 +1,14 @@
 # Octoplant — MCP Plugin voor OctoPlant/versiondog
 
-MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
-OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
+MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) veilige
+OctoPlant/versiondog-navigatie, gerichte checkout en gecontroleerde
+checkoutvrijgave biedt.
 
-**Release:** 2.2.1
+**Release:** 2.3.0
 
-> **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
+> **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
+> bevestigde check-in zonder nieuwe versie. Maintenance mode en andere mutaties
+> zijn uitgesloten.
 
 ---
 
@@ -153,6 +156,23 @@ Een installatienaam en/of kostenplaats volstaat. Bij meerdere kandidaten heeft
 `component_path` met `checkout_component`; `archive_relative_path` is de
 bijbehorende read-only locatie in de gedeelde archive.
 
+### `checkin_unchanged_component`
+
+Geeft één gerichte, onveranderde native checkout vrij na directe
+gebruikersbevestiging:
+
+```
+checkin_unchanged_component(
+    component_path = "\RWZI's\{installatiemap}\{PLC-project}",
+    confirmed = true
+)
+```
+
+Deze tool gebruikt altijd de lokale clientarchive, maakt nooit een versie
+(`Enabled=N`), voert geen vergelijking uit (`WithoutComparison=Y`) en geeft
+de checkout vrij (`ReleaseAfterCheckIn=Y`). Maintenance mode en iedere andere
+Octoplant-mutatie blijven uitgesloten.
+
 ---
 
 ## Archiefstructuur — padopbouw
@@ -191,7 +211,8 @@ de plugin probeert nooit een bredere checkout als fallback.
 - `CredentialsManager.exe` geeft credentials en instellingen alleen via een per aanvraag gemaakte private named pipe door; stdout, stderr, logs en MCP-responses bevatten nooit waarden
 - Authenticatie- en configuratiefouten geven uitsluitend gestandaardiseerde exitcodes; credentials, tokens en ruwe uitvoer van onderliggende binaries komen niet in logging of tool-responses
 - Bearer-tokens worden nooit gelogd of in tool-responses opgenomen
-- De plugin biedt uitsluitend **leesbewerkingen** — terugschrijven naar OctoPlant is geblokkeerd
+- De plugin staat uitsluitend de expliciet bevestigde, versieloze
+  checkoutvrijgave toe; alle andere Octoplant-mutaties zijn geblokkeerd
 
 ---
 

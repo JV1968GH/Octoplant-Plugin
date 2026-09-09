@@ -14,6 +14,9 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _VDOGCHECKOUT_DEFAULT = (
     _PROJECT_ROOT / "binaryTools" / "VDogCheckOut" / "publish" / "VDogCheckOut.exe"
 )
+_VDOGCHECKIN_DEFAULT = (
+    _PROJECT_ROOT / "binaryTools" / "VDogCheckIn" / "publish" / "VDogCheckIn.exe"
+)
 _CHECKOUT_RETURN_CODES: dict[int, str] = {
     0: "OK -- ten minste een component uitgecheckt",
     1: "Fout -- geen check-out mogelijk of minimaal een mislukt",
@@ -28,7 +31,7 @@ class OctoplantConfigError(RuntimeError):
 
 
 class OctoplantClient:
-    """Client for read-only shared-archive navigation and component checkout."""
+    """Client for OctoPlant/versiondog navigation and controlled lifecycle operations."""
 
     def __init__(self) -> None:
         self.runtime_path = Path.cwd().resolve()
@@ -43,6 +46,9 @@ class OctoplantClient:
                 f"VDogCheckOut.exe niet gevonden: {self._vdogcheckout_exe}\n"
                 "Installeer de plugin opnieuw; de meegeleverde runtime-artifacts ontbreken."
             )
+        self._vdogcheckin_exe = str(
+            self._resolve_existing_file(str(_VDOGCHECKIN_DEFAULT), _PROJECT_ROOT)
+        )
 
         self._navigator = ServerArchiveNavigator()
 
@@ -159,14 +165,7 @@ class OctoplantClient:
             raise OctoplantConfigError(
                 "component_path must be a relative Octoplant component path."
             )
-        args: list[str] = [
-            self._vdogcheckout_exe,
-            "checkout",
-            "--json",
-        ]
-        if checkout_root is not None:
-            args += ["--workspace", str(checkout_root)]
-        args.append(component_path)
+        args: list[str] = [self._vdogcheckout_exe, "checkout", "--json", component_path]
 
         if with_backups:
             args.append("--backups")
@@ -205,9 +204,71 @@ class OctoplantClient:
                 ) from exception
             response["status"] = native_result.get("status", response["status"])
             response["checkout_path"] = checkout_path
-            response["artifact_path"] = str(
-                Path(checkout_path).joinpath(*component_parts)
-            )
+            component_source = Path(checkout_path).joinpath(*component_parts)
+            if checkout_root is None:
+                response["artifact_path"] = str(component_source)
+            else:
+                artifact_path = checkout_root.joinpath(*component_parts)
+                mirror_result = await asyncio.to_thread(
+                    subprocess.run,
+                    [
+                        "robocopy",
+                        str(component_source),
+                        str(artifact_path),
+                        "/MIR",
+                        "/R:1",
+                        "/W:1",
+                        "/NFL",
+                        "/NDL",
+                        "/NP",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=self.runtime_path,
+                )
+                if mirror_result.returncode > 7:
+                    response["status"] = "Checkout geslaagd, maar artifactmirror mislukt"
+                    response["mirror_returncode"] = mirror_result.returncode
+                else:
+                    response["artifact_path"] = str(artifact_path)
         elif result.returncode == 2:
             response["status"] = "not_found"
         return response
+
+    async def checkin_unchanged_component(
+        self, component_path: str, confirmed: bool
+    ) -> dict[str, Any]:
+        """Release exactly one unchanged native checkout without creating a version."""
+        if confirmed is not True:
+            raise OctoplantConfigError(
+                "Explicit confirmation is required before releasing a checkout."
+            )
+        component_parts = tuple(
+            part for part in component_path.replace("/", "\\").split("\\") if part
+        )
+        if (
+            not component_path.startswith(("\\", "/"))
+            or not component_parts
+            or any(part in {".", ".."} for part in component_parts)
+        ):
+            raise OctoplantConfigError(
+                "component_path must be a relative Octoplant component path."
+            )
+        if not Path(self._vdogcheckin_exe).exists():
+            raise OctoplantConfigError(
+                "VDogCheckIn.exe ontbreekt; installeer de plugin opnieuw."
+            )
+
+        result = await asyncio.to_thread(
+            subprocess.run,
+            [self._vdogcheckin_exe, "checkin", "--json", component_path],
+            capture_output=True,
+            text=True,
+            cwd=self.runtime_path,
+        )
+        return {
+            "returncode": result.returncode,
+            "success": result.returncode == 0,
+            "component_path": component_path,
+            "binary_output_suppressed": True,
+        }

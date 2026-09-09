@@ -1,7 +1,6 @@
-"""MCP-tools voor Check-Out van OctoPlant/versiondog componenten.
+"""MCP-tools voor de gecontroleerde OctoPlant/versiondog checkoutlifecycle.
 
 Registreer tools via register_checkout_tools(mcp, client).
-Uitsluitend leesbewerkingen — check-in is expliciet uitgesloten.
 """
 
 from typing import Optional
@@ -61,3 +60,8 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
             with_std_libs=with_std_libs,
             comment=comment,
         )
+
+    @mcp.tool()
+    async def checkin_unchanged_component(component_path: str, confirmed: bool = False) -> dict:
+        """Geef precies een onveranderde lokale checkout vrij zonder nieuwe versie."""
+        return await client.checkin_unchanged_component(component_path, confirmed)

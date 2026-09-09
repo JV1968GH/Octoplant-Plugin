@@ -3,7 +3,8 @@
 Entry point: python server.py (stdio transport voor GitHub Copilot Desktop).
 
 De wrapper leest configuratie veilig uit CredentialsManager.
-SCOPE: uitsluitend navigatie en check-out — geen check-in, geen maintenance mode.
+SCOPE: navigatie, gerichte checkout en gecontroleerde checkoutvrijgave;
+geen maintenance mode of andere mutaties.
 """
 
 import os
@@ -38,8 +39,9 @@ mcp = FastMCP(
     "MCP_Octoplant",
     instructions=(
         "MCP server voor OctoPlant/versiondog. "
-        "Biedt read-only toegang: navigatie en check-out van componenten. "
-        "Check-in en maintenance mode zijn uitdrukkelijk NIET beschikbaar."
+        "Biedt navigatie, gerichte checkout en gecontroleerde checkoutvrijgave. "
+        "Een check-in maakt nooit een versie en vereist expliciete bevestiging. "
+        "Maintenance mode en andere mutaties zijn niet beschikbaar."
     ),
     **({"icons": _icons} if _icons is not None else {}),
 )

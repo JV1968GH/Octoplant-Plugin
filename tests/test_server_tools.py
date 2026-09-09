@@ -34,7 +34,9 @@ class PluginPackageTests(unittest.TestCase):
 
         self.assertEqual(source_profile, package_profile)
         self.assertIn("name: octoplant-specialist", source_profile)
-        self.assertIn("exactly one read-only `octoplant.*` work_request", source_profile)
+        self.assertIn("exactly one `octoplant.*` work_request", source_profile)
+        self.assertIn("Enabled=N", source_profile)
+        self.assertIn("WithoutComparison=Y", source_profile)
         self.assertIn("correlation_id", source_profile)
         self.assertIn("step_id", source_profile)
 
@@ -146,7 +148,12 @@ class ServerInitializationTests(unittest.TestCase):
 
         self.assertSetEqual(
             tool_names,
-            {"authenticate", "checkout_component", "resolve_project"},
+            {
+                "authenticate",
+                "checkout_component",
+                "checkin_unchanged_component",
+                "resolve_project",
+            },
         )
 
     def test_starts_with_configuration_tool_when_runtime_is_missing(self) -> None:
@@ -176,7 +183,7 @@ class WorkspaceResolutionTests(unittest.TestCase):
         )
 
     @patch.dict("src.client.os.environ", {}, clear=True)
-    def test_checkout_writes_directly_to_the_handoff_installation_directory(self) -> None:
+    def test_checkout_mirrors_to_the_handoff_installation_directory(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()
             resolved_workspace = Path(workspace).resolve()
@@ -207,19 +214,14 @@ class WorkspaceResolutionTests(unittest.TestCase):
                     )
                 )
 
-            command = run.call_args.args[0]
+            command = run.call_args_list[0].args[0]
             self.assertEqual(
-                command[:5],
+                command[:4],
                 [
                     client._vdogcheckout_exe,
                     "checkout",
                     "--json",
-                    "--workspace",
-                    str(
-                        resolved_workspace
-                        / "PLC-projecten"
-                        / "Example installation - 100026"
-                    ),
+                    r"\{root}\{installation}\{plc-project}",
                 ],
             )
             self.assertEqual(run.call_args.kwargs["cwd"], client.runtime_path)
@@ -238,6 +240,9 @@ class WorkspaceResolutionTests(unittest.TestCase):
                 / "{installation}"
                 / "{plc-project}",
             )
+            mirror_command = run.call_args_list[1].args[0]
+            self.assertEqual(mirror_command[0], "robocopy")
+            self.assertEqual(mirror_command[3:5], ["/MIR", "/R:1"])
             self.assertNotEqual(
                 Path(result["checkout_path"]).parent,
                 Path(__file__).resolve().parents[1],
@@ -292,6 +297,41 @@ class WorkspaceResolutionTests(unittest.TestCase):
 
             self.assertEqual(result["status"], "not_found")
             self.assertNotIn("--all", run.call_args.args[0])
+
+    def test_checkin_requires_confirmation(self) -> None:
+        client = OctoplantClient()
+
+        with self.assertRaisesRegex(OctoplantConfigError, "Explicit confirmation"):
+            asyncio.run(
+                client.checkin_unchanged_component(
+                    r"\{root}\{installation}\{plc-project}", False
+                )
+            )
+
+    def test_checkin_uses_the_dedicated_wrapper(self) -> None:
+        client = OctoplantClient()
+
+        with patch(
+            "src.client.subprocess.run",
+            return_value=subprocess.CompletedProcess(args=[], returncode=0),
+        ) as run:
+            result = asyncio.run(
+                client.checkin_unchanged_component(
+                    r"\{root}\{installation}\{plc-project}", True
+                )
+            )
+
+        self.assertEqual(
+            run.call_args.args[0],
+            [
+                client._vdogcheckin_exe,
+                "checkin",
+                "--json",
+                r"\{root}\{installation}\{plc-project}",
+            ],
+        )
+        self.assertTrue(result["success"])
+        self.assertTrue(result["binary_output_suppressed"])
 
 
 if __name__ == "__main__":

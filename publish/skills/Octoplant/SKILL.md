@@ -1,15 +1,16 @@
 ---
 name: Octoplant
-version: 2.2.1
-description: "OctoPlant/versiondog MCP-kennis voor read-only projectnavigatie in de gedeelde serverarchive en CLI-checkout. Gebruik voor installaties, kostenplaatsen, PLC-projecten, ARCHIVE, RWZI's, PS, resolve_project en VDogAutoCheckOut.exe."
+version: 2.3.0
+description: "OctoPlant/versiondog MCP-kennis voor projectnavigatie, CLI-checkout en gecontroleerde checkoutvrijgave zonder versiecreatie."
 ---
 
 # Octoplant MCP
 
-De plugin biedt uitsluitend read-only navigatie en gerichte componentcheckout.
-Implementeer nooit check-in, maintenance mode, checkout-all of andere
-schrijfbewerkingen. Checkout-all kan de lokale schijfruimte uitputten en is
-daarom uitdrukkelijk verboden, ook wanneer de native client die optie biedt.
+De plugin biedt read-only navigatie, gerichte componentcheckout en uitsluitend
+een gecontroleerde check-in van exact één onveranderd component. Die vrijgave
+vereist directe gebruikersbevestiging en gebruikt altijd `Enabled=N`,
+`WithoutComparison=Y` en `ReleaseAfterCheckIn=Y`. Implementeer nooit
+maintenance mode, checkout-all of andere schrijfbewerkingen.
 
 ## Gedeelde serverarchive: strikt read-only
 
