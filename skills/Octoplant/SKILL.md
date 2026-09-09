@@ -6,8 +6,10 @@ description: "OctoPlant/versiondog MCP-kennis voor read-only projectnavigatie in
 
 # Octoplant MCP
 
-De plugin biedt uitsluitend read-only navigatie en check-out.
-Implementeer nooit check-in, maintenance mode of andere schrijfbewerkingen.
+De plugin biedt uitsluitend read-only navigatie en gerichte componentcheckout.
+Implementeer nooit check-in, maintenance mode, checkout-all of andere
+schrijfbewerkingen. Checkout-all kan de lokale schijfruimte uitputten en is
+daarom uitdrukkelijk verboden, ook wanneer de native client die optie biedt.
 
 ## Gedeelde serverarchive: strikt read-only
 
@@ -28,11 +30,14 @@ Gebruik `component_path` voor `checkout_component`. Gebruik
 `archive_relative_path` alleen voor een bestaand INI-veld dat uitdrukkelijk
 een pad in de gedeelde filesystemarchive verwacht.
 
+Geef altijd precies één componentpad of component-ID op. Gebruik nooit
+`checkout_all`, `--all`, een leeg componentpad of een andere brede checkout.
+
 ## Referenties
 
 | Onderwerp | Bestand |
 |---|---|
 | Archiefscan en rangschikking | [navigation.md](./references/navigation.md) |
 | MCP-tools | [mcp-tools.md](./references/mcp-tools.md) |
-| Checkout en workspacemirror | [checkout.md](./references/checkout.md) |
+| Gerichte checkoutbestemming | [checkout.md](./references/checkout.md) |
 | Configuratie | [project-structure.md](./references/project-structure.md) |

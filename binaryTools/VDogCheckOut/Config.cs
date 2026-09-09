@@ -13,8 +13,7 @@ internal sealed record AppConfig(
     bool SslVerify,
     string ArchivePath,
     string CheckoutPath,
-    string VdogClientPath,
-    string ProjectRoot
+    string VdogClientPath
 );
 
 internal static class ConfigLoader
@@ -32,8 +31,7 @@ internal static class ConfigLoader
             CredentialsManagerClient.ReadSetting(CredentialTarget, "URL"),
             CredentialsManagerClient.ReadSetting(CredentialTarget, "Portnumber"));
         var sslVerify = false;
-        var projectRoot = ResolveWorkspacePath(workspacePath);
-        var checkoutPath = projectRoot;
+        var checkoutPath = ResolveCheckoutPath(workspacePath, archivePath);
 
         return new AppConfig(
             credential.UserName,
@@ -43,8 +41,7 @@ internal static class ConfigLoader
             sslVerify,
             archivePath,
             checkoutPath,
-            vdogClientPath,
-            projectRoot);
+            vdogClientPath);
     }
 
     private static string ResolveVdogClientPath()
@@ -79,15 +76,17 @@ internal static class ConfigLoader
         return Path.GetFullPath(expanded);
     }
 
-    private static string ResolveWorkspacePath(string? workspacePath)
+    private static string ResolveCheckoutPath(string? workspacePath, string archivePath)
     {
-        var path = string.IsNullOrWhiteSpace(workspacePath)
-            ? Directory.GetCurrentDirectory()
-            : workspacePath;
-        if (!Path.IsPathFullyQualified(path) || !Directory.Exists(path))
-            throw new ConfigException("De opgegeven workspace bestaat niet of is ongeldig.");
+        if (string.IsNullOrWhiteSpace(workspacePath))
+            return archivePath;
 
-        return Path.GetFullPath(path);
+        if (!Path.IsPathFullyQualified(workspacePath))
+            throw new ConfigException("De opgegeven workspace moet een absoluut pad zijn.");
+
+        var checkoutPath = Path.GetFullPath(workspacePath);
+        Directory.CreateDirectory(checkoutPath);
+        return checkoutPath;
     }
 }
 

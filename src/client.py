@@ -1,6 +1,7 @@
 """Read-only OctoPlant/versiondog navigation and checkout client."""
 
 import asyncio
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -59,17 +60,21 @@ class OctoplantClient:
         ).as_dict()
 
     @staticmethod
-    def _resolve_workspace_path(workspace_path: str) -> Path:
+    def _resolve_workspace_path(workspace_path: Optional[str]) -> Optional[Path]:
         """Resolve the initial prompt workspace supplied by the agent handoff."""
+        if workspace_path is None:
+            return None
         if not isinstance(workspace_path, str):
             raise OctoplantConfigError(
-                "workspace_path must reference an existing absolute workspace directory."
+                "workspace_path must reference an absolute workspace directory."
             )
+        if not workspace_path.strip():
+            return None
 
         path = Path(os.path.expandvars(workspace_path.strip())).expanduser()
-        if not path.is_absolute() or not path.is_dir():
+        if not path.is_absolute():
             raise OctoplantConfigError(
-                "workspace_path must reference an existing absolute workspace directory."
+                "workspace_path must reference an absolute workspace directory."
             )
 
         workspace = path.resolve()
@@ -102,12 +107,14 @@ class OctoplantClient:
     @classmethod
     def _resolve_checkout_root(
         cls,
-        workspace_path: str,
+        workspace_path: Optional[str],
         installation_name: Optional[str],
         cost_center: Optional[str],
-    ) -> Path:
+    ) -> Optional[Path]:
         """Place checkouts below the initial prompt workspace, never a child session."""
         workspace = cls._resolve_workspace_path(workspace_path)
+        if workspace is None:
+            return None
         return (
             workspace
             / "PLC-projecten"
@@ -123,9 +130,9 @@ class OctoplantClient:
 
     async def checkout_component(
         self,
-        workspace_path: str,
-        installation_name: Optional[str],
-        cost_center: Optional[str],
+        workspace_path: Optional[str] = None,
+        installation_name: Optional[str] = None,
+        cost_center: Optional[str] = None,
         component_path: Optional[str] = None,
         with_backups: bool = False,
         number_of_archives: int = 1,
@@ -144,18 +151,21 @@ class OctoplantClient:
         component_parts = tuple(
             part for part in component_path.replace("/", "\\").split("\\") if part
         )
-        if not component_parts or any(part in {".", ".."} for part in component_parts):
+        if (
+            not component_path.startswith(("\\", "/"))
+            or not component_parts
+            or any(part in {".", ".."} for part in component_parts)
+        ):
             raise OctoplantConfigError(
                 "component_path must be a relative Octoplant component path."
             )
-        artifact_path = checkout_root.joinpath(*component_parts)
         args: list[str] = [
             self._vdogcheckout_exe,
             "checkout",
-            "--workspace",
-            str(checkout_root),
+            "--json",
         ]
-
+        if checkout_root is not None:
+            args += ["--workspace", str(checkout_root)]
         args.append(component_path)
 
         if with_backups:
@@ -176,17 +186,28 @@ class OctoplantClient:
             cwd=self.runtime_path,
         )
 
-        response = {
+        response: dict[str, Any] = {
             "returncode": result.returncode,
             "status": _CHECKOUT_RETURN_CODES.get(
                 result.returncode, f"Onbekende code ({result.returncode})"
             ),
-            "checkout_path": str(checkout_root),
-            "artifact_path": str(artifact_path),
             "stdout": "",
             "stderr": "",
             "binary_output_suppressed": True,
         }
-        if result.returncode == 2:
+        if result.returncode == 0:
+            try:
+                native_result = json.loads(result.stdout)
+                checkout_path = native_result["checkout_path"]
+            except (json.JSONDecodeError, KeyError, TypeError) as exception:
+                raise RuntimeError(
+                    "VDogCheckOut.exe returned no valid checkout result."
+                ) from exception
+            response["status"] = native_result.get("status", response["status"])
+            response["checkout_path"] = checkout_path
+            response["artifact_path"] = str(
+                Path(checkout_path).joinpath(*component_parts)
+            )
+        elif result.returncode == 2:
             response["status"] = "not_found"
         return response

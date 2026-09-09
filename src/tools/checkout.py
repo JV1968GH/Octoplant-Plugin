@@ -16,7 +16,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
     @mcp.tool()
     async def checkout_component(
-        workspace_path: str,
+        workspace_path: Optional[str] = None,
         installation_name: Optional[str] = None,
         cost_center: Optional[str] = None,
         component_path: Optional[str] = None,
@@ -33,7 +33,9 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         er is geen checkout-all fallback.
 
         Args:
-            workspace_path:     Absoluut pad naar de initiële promptworkspace.
+            workspace_path:     Optionele absolute directe checkout-root, die
+                                indien nodig wordt aangemaakt. Zonder dit pad
+                                wordt de lokale clientarchive gebruikt.
             installation_name:  Installatienaam uit de handoff.
             cost_center:        Kostenplaats uit de handoff.
             component_path:     Relatief pad binnen de archive met verplichte leading backslash,

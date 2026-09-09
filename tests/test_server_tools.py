@@ -76,19 +76,34 @@ class WorkspaceResolutionTests(unittest.TestCase):
             )
 
     @patch.dict("src.client.os.environ", {}, clear=True)
-    def test_rejects_missing_client_workspace(self) -> None:
-        with self.assertRaises(OctoplantConfigError):
-            OctoplantClient._resolve_workspace_path(r"C:\does-not-exist")
+    def test_allows_a_missing_direct_checkout_workspace(self) -> None:
+        self.assertEqual(
+            OctoplantClient._resolve_workspace_path(r"C:\does-not-exist"),
+            Path(r"C:\does-not-exist"),
+        )
 
     @patch.dict("src.client.os.environ", {}, clear=True)
-    def test_checkout_mirrors_to_the_handoff_installation_directory(self) -> None:
+    def test_checkout_writes_directly_to_the_handoff_installation_directory(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()
             resolved_workspace = Path(workspace).resolve()
 
             with patch(
                 "src.client.subprocess.run",
-                return_value=subprocess.CompletedProcess(args=[], returncode=0),
+                return_value=subprocess.CompletedProcess(
+                    args=[],
+                    returncode=0,
+                    stdout=json.dumps(
+                        {
+                            "checkout_path": str(
+                                resolved_workspace
+                                / "PLC-projecten"
+                                / "Example installation - 100026"
+                            )
+                        }
+                    ),
+                    stderr="",
+                ),
             ) as run:
                 result = asyncio.run(
                     client.checkout_component(
@@ -101,10 +116,11 @@ class WorkspaceResolutionTests(unittest.TestCase):
 
             command = run.call_args.args[0]
             self.assertEqual(
-                command[:4],
+                command[:5],
                 [
                     client._vdogcheckout_exe,
                     "checkout",
+                    "--json",
                     "--workspace",
                     str(
                         resolved_workspace
@@ -133,6 +149,29 @@ class WorkspaceResolutionTests(unittest.TestCase):
                 Path(result["checkout_path"]).parent,
                 Path(__file__).resolve().parents[1],
             )
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_checkout_without_workspace_uses_the_configured_clientarchive(self) -> None:
+        client = OctoplantClient()
+        clientarchive = Path(r"C:\vdClientArchive")
+
+        with patch(
+            "src.client.subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout=json.dumps({"checkout_path": str(clientarchive)}),
+                stderr="",
+            ),
+        ) as run:
+            result = asyncio.run(
+                client.checkout_component(
+                    component_path=r"\{root}\{installation}\{plc-project}",
+                )
+            )
+
+        self.assertNotIn("--workspace", run.call_args.args[0])
+        self.assertEqual(Path(result["checkout_path"]), clientarchive)
 
     def test_checkout_uses_only_available_installation_identifier(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:

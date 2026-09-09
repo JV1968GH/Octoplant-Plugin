@@ -93,7 +93,7 @@ if ((Test-Path $exe -PathType Leaf) -and (Test-Path $credentialsExe -PathType Le
     Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe --help"
     Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe login"
     Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe checkout --workspace `"C:\pad\naar\workspace`" `"\{componentpad-uit-resolve_project}`""
-    Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe checkout --workspace `"C:\pad\naar\workspace`" --all"
+    Write-Host "  .\binaryTools\VDogCheckOut\publish\VDogCheckOut.exe checkout `"\{componentpad-uit-resolve_project}`""
     Write-Host ""
     Write-Host "Zorg dat credentials beschikbaar zijn op dit toestel." -ForegroundColor Yellow
 } else {

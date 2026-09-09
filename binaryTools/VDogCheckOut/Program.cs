@@ -14,21 +14,18 @@ namespace VDogCheckOut;
 ///
 /// Gebruik:
 ///   VDogCheckOut.exe login
-///   VDogCheckOut.exe checkout --workspace &lt;workspace_path&gt; &lt;component_path&gt;
-///   VDogCheckOut.exe checkout --workspace &lt;workspace_path&gt; --id &lt;component_id&gt;
-///   VDogCheckOut.exe checkout --workspace &lt;workspace_path&gt; --all
-///   VDogCheckOut.exe --workspace &lt;workspace_path&gt; &lt;component_path&gt;
+///   VDogCheckOut.exe checkout [--workspace &lt;workspace_path&gt;] &lt;component_path&gt;
+///   VDogCheckOut.exe checkout [--workspace &lt;workspace_path&gt;] --id &lt;component_id&gt;
+///   VDogCheckOut.exe [--workspace &lt;workspace_path&gt;] &lt;component_path&gt;
 ///
 /// Opties (checkout):
 ///   --id &lt;id&gt;           Component-ID (alternatief voor pad)
-///   --all               Alle componenten uitchecken
 ///   --backups           Backups meenemen (/WithBackups:Y)
 ///   --archives &lt;n&gt;      Aantal archives (0 = alle, standaard 1)
 ///   --std-libs          Standaardbibliotheken meenemen (/WithStdLibs:Y)
 ///   --version &lt;n&gt;       Specifiek versienummer
 ///   --comment &lt;text&gt;    Opmerking in het CheckIn-CheckOut-Log
-///   --skip-mirror       Geen robocopy-stap na checkout
-///   --workspace <pad>   Verplichte absolute doel-workspace voor de lokale mirror
+///   --workspace <pad>   Absolute directe checkout-root; wordt aangemaakt indien nodig
 ///   --json              Uitvoer als JSON (voor machineverwerking)
 ///
 /// Algemene opties:
@@ -89,19 +86,14 @@ internal static class Program
             argStart   = 0;
         }
 
-        if (subcommand == "checkout" && string.IsNullOrWhiteSpace(workspacePath))
-        {
-            Console.Error.WriteLine("Fout: checkout vereist --workspace met een absoluut bestaand pad.");
-            return ExitError;
-        }
-
         AppConfig config;
         try
         {
             config = ConfigLoader.Load(workspacePath);
         }
-        catch (ConfigException)
+        catch (ConfigException exception)
         {
+            Console.Error.WriteLine($"Configuratiefout: {exception.Message}");
             return ExitConfig;
         }
         catch
@@ -136,13 +128,11 @@ internal static class Program
     {
         string? componentPath = null;
         string? componentId   = null;
-        bool allComponents    = false;
         bool withBackups      = false;
         bool withStdLibs      = false;
         int  numberOfArchives = 1;
         int? version          = null;
         string? comment       = null;
-        bool skipMirror       = false;
         bool jsonOutput       = false;
 
         for (int i = start; i < args.Count; i++)
@@ -151,9 +141,6 @@ internal static class Program
             {
                 case "--id":
                     componentId = NextL(args, ref i, "--id");
-                    break;
-                case "--all":
-                    allComponents = true;
                     break;
                 case "--backups":
                     withBackups = true;
@@ -183,9 +170,6 @@ internal static class Program
                 case "--comment":
                     comment = NextL(args, ref i, "--comment");
                     break;
-                case "--skip-mirror":
-                    skipMirror = true;
-                    break;
                 case "--json":
                     jsonOutput = true;
                     break;
@@ -207,12 +191,11 @@ internal static class Program
         }
 
         var targetCount = (componentPath is not null ? 1 : 0)
-                        + (componentId   is not null ? 1 : 0)
-                        + (allComponents             ? 1 : 0);
+                        + (componentId   is not null ? 1 : 0);
 
         if (targetCount == 0)
         {
-            Console.Error.WriteLine("Fout: geef een componentpad, --id of --all op.");
+            Console.Error.WriteLine("Fout: geef een componentpad of --id op.");
             Console.Error.WriteLine("Gebruik --help voor meer informatie.");
             return ExitError;
         }
@@ -227,14 +210,13 @@ internal static class Program
         {
             result = await CheckOutRunner.RunAsync(
                 config,
-                componentPath:    allComponents ? null : componentPath,
+                componentPath:    componentPath,
                 componentId:      componentId,
                 withBackups:      withBackups,
                 numberOfArchives: numberOfArchives,
                 withStdLibs:      withStdLibs,
                 version:          version,
-                comment:          comment,
-                skipMirror:       skipMirror);
+                comment:          comment);
         }
         catch (FileNotFoundException)
         {
@@ -297,23 +279,21 @@ internal static class Program
 
             Gebruik:
               VDogCheckOut.exe login
-              VDogCheckOut.exe checkout --workspace <workspace_path> <component_path>
-              VDogCheckOut.exe checkout --workspace <workspace_path> --id <component_id>
-              VDogCheckOut.exe checkout --workspace <workspace_path> --all
-              VDogCheckOut.exe --workspace <workspace_path> <component_path>
+              VDogCheckOut.exe checkout [--workspace <workspace_path>] <component_path>
+              VDogCheckOut.exe checkout [--workspace <workspace_path>] --id <component_id>
+              VDogCheckOut.exe [--workspace <workspace_path>] <component_path>
 
             Checkout-opties:
               <component_path>    Relatief componentpad
                                   (uit resolve_project.component_path)
               --id <id>           Component-ID als alternatief voor pad
-              --all               Alle beschikbare componenten uitchecken
               --backups           Backups meenemen (/WithBackups:Y)
               --archives <n>      Aantal archives (0 = alle, standaard 1)
               --std-libs          Standaardbibliotheken meenemen (/WithStdLibs:Y)
               --version <n>       Specifiek versienummer uitchecken
               --comment <text>    Opmerking in het CheckIn-CheckOut-Log
-              --skip-mirror       Geen robocopy-stap na checkout
-              --workspace <pad>   Verplichte absolute doel-workspace voor de lokale mirror
+              --workspace <pad>   Absolute directe checkout-root; wordt aangemaakt indien nodig.
+                                  Zonder deze optie wordt de geconfigureerde clientarchive gebruikt.
               --json              Uitvoer als JSON (voor machineverwerking)
 
             Algemene opties:

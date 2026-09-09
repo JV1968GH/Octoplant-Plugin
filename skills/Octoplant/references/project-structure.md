@@ -10,10 +10,10 @@ named pipe. Ze staan onder hoofdkaart `Octoplant`:
 | `OCTOPLANT_CLIENT_ARCHIVE_PATH` | Lokale clientarchive voor `VDogAutoCheckOut.exe`. |
 
 De gedeelde archive is vast ingebouwd en wordt nooit beschreven door de plugin.
-Check-out gebruikt uitsluitend de lokale `OCTOPLANT_CLIENT_ARCHIVE_PATH`;
-mirroracties schrijven uitsluitend naar `PLC-projecten` onder de verplichte
-`workspace_path` uit de initiële handoff, niet onder een child-sessionworkspace
-of de plugininstallatiemap.
+Met een expliciete `workspace_path` checkt de wrapper rechtstreeks uit naar de
+afgeleide lokale artifactroot. Zonder dit pad gebruikt hij uitsluitend
+`OCTOPLANT_CLIENT_ARCHIVE_PATH`. De instelling wordt alleen gelezen en nooit
+gewijzigd; er zijn geen mirroracties.
 
 De versiondog-client staat vast op
 `C:\Program Files (x86)\vdogClient`; de wrapper gebruikt geen alternatieve

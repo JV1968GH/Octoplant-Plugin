@@ -40,8 +40,7 @@ internal static class CheckOutRunner
         int       numberOfArchives = 1,
         bool      withStdLibs      = false,
         int?      version          = null,
-        string?   comment          = null,
-        bool      skipMirror       = false)
+        string?   comment          = null)
     {
         var exe = Path.Combine(config.VdogClientPath, "VDogAutoCheckOut.exe");
         if (!File.Exists(exe))
@@ -49,14 +48,17 @@ internal static class CheckOutRunner
                 $"VDogAutoCheckOut.exe niet gevonden: {exe}\n" +
                 "Installeer de vereiste versiondog-client.");
 
+        var directWorkspaceCheckout = !PathsEqual(
+            config.ArchivePath,
+            config.CheckoutPath);
+
         // --- Beschermingsregel (alleen voor specifiek componentpad) ---
         if (!string.IsNullOrEmpty(componentPath))
         {
             var rel        = componentPath.TrimStart('\\', '/');
-            var inArchive  = Directory.Exists(Path.Combine(config.ArchivePath, rel));
             var inCheckout = Directory.Exists(Path.Combine(config.CheckoutPath, rel));
 
-            if (inArchive && inCheckout)
+            if (inCheckout)
             {
                 return new CheckOutResult(
                     0,
@@ -65,23 +67,23 @@ internal static class CheckOutRunner
                     null, "", "");
             }
 
-            if (inArchive && !inCheckout)
+            if (!directWorkspaceCheckout
+                && Directory.Exists(Path.Combine(config.ArchivePath, rel)))
             {
-                var mirrorOnly = await MirrorAsync(config, rel);
                 return new CheckOutResult(
                     0,
-                    "Mirror uitgevoerd (component al in archive -- checkout overgeslagen)",
+                    "Al beschikbaar -- geen actie vereist",
                     config.CheckoutPath,
-                    mirrorOnly, "", "");
+                    null, "", "");
             }
         }
 
         // --- Bouw argumentenlijst ---
-        Directory.CreateDirectory(config.ArchivePath);
+        Directory.CreateDirectory(config.CheckoutPath);
 
         var args = new List<string>
         {
-            $"/rd:{config.ArchivePath}",
+            $"/rd:{config.CheckoutPath}",
             $"/Account:{config.User}",
             $"/Password:{config.Password}",
         };
@@ -128,43 +130,12 @@ internal static class CheckOutRunner
             ? msg
             : $"Onbekende code ({rc})";
 
-        MirrorResult? syncResult = null;
-        if (rc == 0 && !skipMirror)
-        {
-            var rel = componentPath?.TrimStart('\\', '/');
-            syncResult = await MirrorAsync(config, rel);
-        }
-
-        return new CheckOutResult(rc, status, config.CheckoutPath, syncResult, "", "");
+        return new CheckOutResult(rc, status, config.CheckoutPath, null, "", "");
     }
 
-    private static async Task<MirrorResult> MirrorAsync(AppConfig config, string? relPath)
-    {
-        var src = relPath != null
-            ? Path.Combine(config.ArchivePath, relPath)
-            : config.ArchivePath;
-        var dst = relPath != null
-            ? Path.Combine(config.CheckoutPath, relPath)
-            : config.CheckoutPath;
-
-        Directory.CreateDirectory(dst);
-
-        var psi = new ProcessStartInfo("robocopy")
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError  = true,
-            UseShellExecute        = false,
-            CreateNoWindow         = true,
-        };
-        foreach (var a in new[] { src, dst, "/MIR", "/R:1", "/W:1", "/NFL", "/NDL", "/NP" })
-            psi.ArgumentList.Add(a);
-
-        using var proc = Process.Start(psi)
-            ?? throw new InvalidOperationException("Kon robocopy niet starten.");
-
-        await proc.WaitForExitAsync();
-
-        return new MirrorResult(proc.ExitCode <= 7, proc.ExitCode, src, dst);
-    }
-
+    private static bool PathsEqual(string first, string second) =>
+        string.Equals(
+            Path.GetFullPath(first).TrimEnd(Path.DirectorySeparatorChar),
+            Path.GetFullPath(second).TrimEnd(Path.DirectorySeparatorChar),
+            StringComparison.OrdinalIgnoreCase);
 }
