@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 2.3.1
+version: 2.3.2
 description: "OctoPlant/versiondog MCP-kennis voor gerichte checkout, artifactmirror en gecontroleerde checkoutvrijgave zonder versiecreatie."
 ---
 
@@ -37,6 +37,21 @@ filesystemarchive verwacht.
 
 Geef altijd precies één componentpad of component-ID op. Gebruik nooit
 `checkout_all`, `--all`, een leeg componentpad of een andere brede checkout.
+
+## Verplichte work-result afronding
+
+Een Octoplant-specialist rondt iedere ontvangen `work_request` af voordat het
+kind idle wordt met precies één volledig, schema-geldig `work_result` v1.2
+object. Neem `correlation_id` en `step_id` exact over uit de aanvraag en neem
+altijd `status`, `output_artifacts`, niet-lege `evidence` en niet-lege `risks`
+op. Het JSON-object is de volledige eindreactie; proza, tooluitvoer of idle
+worden nooit als resultaat gebruikt.
+
+`output_artifacts` is altijd aanwezig (leeg als geen artifact bestaat) en elk
+item heeft uitsluitend `ref`, `kind` en `local_path`. Gebruik voor
+`completed`, `blocked`, `failed`, `ambiguous`, `needs_input` en `unsafe` steeds
+een veilig, niet-sensitief resultaat. Deel nooit credentials, configuratiewaarden,
+server- of archivedetails, of ruwe native uitvoer in bewijs, risico's of fouten.
 
 ## Referenties
 

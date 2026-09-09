@@ -4,7 +4,7 @@
   "title": "OT work result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "correlation_id", "step_id", "status", "evidence", "risks"],
+  "required": ["schema_version", "correlation_id", "step_id", "status", "output_artifacts", "evidence", "risks"],
   "properties": {
     "schema_version": { "const": "1.2" },
     "correlation_id": { "type": "string", "format": "uuid" },
@@ -30,8 +30,8 @@
     },
     "octoplant_checkout": { "$ref": "#/$defs/octoplantCheckout" },
     "start_project": { "$ref": "#/$defs/artifact" },
-    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
-    "risks": { "type": "array", "items": { "$ref": "#/$defs/risk" } },
+    "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+    "risks": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/risk" } },
     "errors": { "type": "array", "items": { "$ref": "#/$defs/error" } }
   },
   "$defs": {

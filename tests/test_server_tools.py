@@ -20,6 +20,22 @@ from src.client import OctoplantClient, OctoplantConfigError
 class PluginPackageTests(unittest.TestCase):
     _root = Path(__file__).resolve().parents[1]
     _profile_path = Path("agents") / "octoplant-specialist.agent.md"
+    _fixtures_path = Path("tests") / "fixtures"
+
+    def _load_fixture(self, name: str) -> dict:
+        return json.loads((self._root / self._fixtures_path / name).read_text())
+
+    def _profile_example(self, heading: str) -> dict:
+        profile = (self._root / self._profile_path).read_text()
+        _, separator, remaining = profile.partition(heading)
+        self.assertTrue(separator)
+        return json.loads(remaining.split("```json", 1)[1].split("```", 1)[0])
+
+    def _validate_work_result(self, result: dict) -> None:
+        schema = json.loads(
+            (self._root / "contracts" / "work-result.schema.json").read_text()
+        )
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(result)
 
     def test_registers_the_specialist_agent_in_source_and_package(self) -> None:
         source_manifest = json.loads((self._root / "plugin.json").read_text())
@@ -43,6 +59,8 @@ class PluginPackageTests(unittest.TestCase):
         self.assertIn("checkout_copy_and_release_component", source_profile)
         self.assertIn("correlation_id", source_profile)
         self.assertIn("step_id", source_profile)
+        self.assertIn("before this child becomes idle", source_profile)
+        self.assertIn("The one JSON object is the entire final response", source_profile)
 
     def test_publishes_the_same_work_result_contract(self) -> None:
         source_contract = (
@@ -54,14 +72,23 @@ class PluginPackageTests(unittest.TestCase):
 
         self.assertEqual(source_contract, package_contract)
 
+    def test_publishes_the_same_work_result_workflow_docs(self) -> None:
+        for path in (
+            Path("skills") / "Octoplant" / "SKILL.md",
+            Path("skills") / "Octoplant" / "references" / "checkout.md",
+        ):
+            self.assertEqual(
+                (self._root / path).read_text(),
+                (self._root / "publish" / path).read_text(),
+                path,
+            )
+
     def test_documents_a_complete_generic_result_for_checkout_returncode_one(self) -> None:
-        profile = (self._root / self._profile_path).read_text()
-        _, separator, remaining = profile.partition(
-            "### Terminal targeted-checkout failure"
+        result = self._profile_example("### Terminal targeted-checkout failure")
+        self.assertEqual(
+            result, self._load_fixture("checkout-failed.work-result.json")
         )
-        self.assertTrue(separator)
-        example = remaining.split("```json", 1)[1].split("```", 1)[0]
-        result = json.loads(example)
+        self._validate_work_result(result)
 
         self.assertSetEqual(
             set(result),
@@ -119,20 +146,28 @@ class PluginPackageTests(unittest.TestCase):
         self.assertIn("Return code `1000`", profile)
         self.assertIn("Tool invocation error without a return code", profile)
         self.assertIn("Authentication failed.", profile)
-        self.assertIn("exact input `correlation_id`", profile)
-        self.assertIn("exact input `step_id`", profile)
-
-    def test_documents_schema_valid_successful_targeted_checkout_result(self) -> None:
-        profile = (self._root / self._profile_path).read_text()
-        _, separator, remaining = profile.partition("### Successful targeted checkout")
-        self.assertTrue(separator)
-        example = remaining.split("```json", 1)[1].split("```", 1)[0]
-        result = json.loads(example)
-        schema = json.loads(
-            (self._root / "contracts" / "work-result.schema.json").read_text()
+        self.assertIn("Preserve the input\n`correlation_id` and `step_id` exactly.", profile)
+        for status in (
+            "completed",
+            "blocked",
+            "failed",
+            "ambiguous",
+            "needs_input",
+            "unsafe",
+        ):
+            self.assertIn(f"`{status}`", profile)
+        self.assertIn(
+            "each entry must\ncontain exactly `ref`, `kind`, and `local_path`",
+            profile,
         )
 
-        Draft202012Validator(schema, format_checker=FormatChecker()).validate(result)
+    def test_documents_schema_valid_successful_targeted_checkout_result(self) -> None:
+        result = self._profile_example("### Successful targeted checkout")
+        self.assertEqual(
+            result, self._load_fixture("checkout-success.work-result.json")
+        )
+
+        self._validate_work_result(result)
 
         self.assertEqual(result["status"], "completed")
         self.assertTrue(result["output_artifacts"])
@@ -145,6 +180,25 @@ class PluginPackageTests(unittest.TestCase):
             result["octoplant_checkout"]["local_checkout_ref"],
             result["output_artifacts"][0]["ref"],
         )
+
+    def test_requires_complete_work_result_fields(self) -> None:
+        schema = json.loads(
+            (self._root / "contracts" / "work-result.schema.json").read_text()
+        )
+
+        self.assertTrue(
+            {
+                "schema_version",
+                "correlation_id",
+                "step_id",
+                "status",
+                "output_artifacts",
+                "evidence",
+                "risks",
+            }.issubset(schema["required"])
+        )
+        self.assertEqual(schema["properties"]["evidence"]["minItems"], 1)
+        self.assertEqual(schema["properties"]["risks"]["minItems"], 1)
 
     def test_keeps_all_release_version_metadata_in_sync(self) -> None:
         source_manifest = json.loads((self._root / "plugin.json").read_text())

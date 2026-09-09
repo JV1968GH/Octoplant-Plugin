@@ -27,12 +27,34 @@ output.
 
 ## Work result contract
 
-Every terminal response must be exactly one `work_result` JSON object conforming
-to `contracts/work-result.schema.json` v1.2. Always include
-`schema_version`, the exact input `correlation_id`, the exact input `step_id`,
-`status`, a non-empty `evidence` array, and a non-empty `risks` array. Do not
-return a partial tool payload, prose, raw exception, native status text,
-`stdout`, or `stderr`.
+Every received `work_request` must end, before this child becomes idle, with
+exactly one complete `work_result` JSON object conforming to
+`contracts/work-result.schema.json` v1.2. Preserve the input
+`correlation_id` and `step_id` exactly. Every result must include
+`schema_version`, `correlation_id`, `step_id`, `status`, `output_artifacts`, a
+non-empty `evidence` array, and a non-empty `risks` array.
+
+The one JSON object is the entire final response. Do not use prose, a tool
+payload, raw exception, native status text, `stdout`, `stderr`, a progress
+update, or becoming idle as a substitute for the result. `output_artifacts`
+must always be present (use `[]` when no artifact exists); each entry must
+contain exactly `ref`, `kind`, and `local_path`.
+
+Use terminal statuses without exposing sensitive information:
+
+| Situation | `work_result.status` | Required result behavior |
+| --- | --- | --- |
+| Requested read-only operation completed, including `not_found` | `completed` | Record the observed route and local artifact, if one exists. |
+| Local configuration prevents the operation | `blocked` | Record only the generic configuration outcome and safe evidence. |
+| The operation or tool invocation failed | `failed` | Record a generic failure and safe evidence; do not retry or diagnose. |
+| More than one valid target remains | `ambiguous` | Record the non-sensitive candidate ambiguity and no checkout artifact. |
+| Required request data or direct confirmation is missing | `needs_input` | State the missing non-sensitive input and perform no operation. |
+| The request would violate the Prime Directive or a safety rule | `unsafe` | State the blocked unsafe action generically and perform no operation. |
+
+For `blocked`, `failed`, `ambiguous`, `needs_input`, and `unsafe`, use an empty
+`output_artifacts` array unless an earlier completed local artifact is relevant.
+Never include credentials, configuration values, archive/server details, or raw
+native tool output in `summary`, `evidence`, `risks`, or `errors`.
 
 For every checkout result, retain the resolved `component_path` and resolved
 identity in `octoplant_checkout` and evidence. A native return code `2` /
