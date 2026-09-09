@@ -12,6 +12,8 @@ from pathlib import Path
 from unittest.mock import patch
 from uuid import UUID
 
+from jsonschema import Draft202012Validator, FormatChecker
+
 from src.client import OctoplantClient, OctoplantConfigError
 
 
@@ -41,6 +43,16 @@ class PluginPackageTests(unittest.TestCase):
         self.assertIn("checkout_copy_and_release_component", source_profile)
         self.assertIn("correlation_id", source_profile)
         self.assertIn("step_id", source_profile)
+
+    def test_publishes_the_same_work_result_contract(self) -> None:
+        source_contract = (
+            self._root / "contracts" / "work-result.schema.json"
+        ).read_text()
+        package_contract = (
+            self._root / "publish" / "contracts" / "work-result.schema.json"
+        ).read_text()
+
+        self.assertEqual(source_contract, package_contract)
 
     def test_documents_a_complete_generic_result_for_checkout_returncode_one(self) -> None:
         profile = (self._root / self._profile_path).read_text()
@@ -109,6 +121,30 @@ class PluginPackageTests(unittest.TestCase):
         self.assertIn("Authentication failed.", profile)
         self.assertIn("exact input `correlation_id`", profile)
         self.assertIn("exact input `step_id`", profile)
+
+    def test_documents_schema_valid_successful_targeted_checkout_result(self) -> None:
+        profile = (self._root / self._profile_path).read_text()
+        _, separator, remaining = profile.partition("### Successful targeted checkout")
+        self.assertTrue(separator)
+        example = remaining.split("```json", 1)[1].split("```", 1)[0]
+        result = json.loads(example)
+        schema = json.loads(
+            (self._root / "contracts" / "work-result.schema.json").read_text()
+        )
+
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(result)
+
+        self.assertEqual(result["status"], "completed")
+        self.assertTrue(result["output_artifacts"])
+        for artifact in result["output_artifacts"]:
+            self.assertSetEqual(set(artifact), {"ref", "kind", "local_path"})
+            self.assertTrue(artifact["ref"])
+            self.assertTrue(artifact["kind"])
+            self.assertTrue(artifact["local_path"])
+        self.assertEqual(
+            result["octoplant_checkout"]["local_checkout_ref"],
+            result["output_artifacts"][0]["ref"],
+        )
 
     def test_keeps_all_release_version_metadata_in_sync(self) -> None:
         source_manifest = json.loads((self._root / "plugin.json").read_text())

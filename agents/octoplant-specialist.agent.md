@@ -47,6 +47,66 @@ checkout-all fallback, authentication attempt, or diagnostic action:
 | Return code `1000` | `failed` | Use `Authentication failed.` as the only human-readable failure message. |
 | Tool invocation error without a return code | `failed` | Use the generic targeted-checkout error result without `errors[].returncode` and set `checkout_executed` to `false`. |
 
+### Successful targeted checkout
+
+Every `output_artifacts` entry must be exactly an object with `ref`, `kind`,
+and `local_path`. Do not include native checkout fields, component metadata, or
+any other keys in an artifact. A successful result has this complete shape:
+
+```json
+{
+  "schema_version": "1.2",
+  "correlation_id": "26c66baf-f646-4c8d-bac5-e9e27ab32b12",
+  "step_id": "resolve-checkout-dendermonde-plc-2",
+  "status": "completed",
+  "summary": "The requested read-only targeted checkout completed.",
+  "output_artifacts": [
+    {
+      "ref": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE",
+      "kind": "octoplant-targeted-checkout",
+      "local_path": "C:\\workspaces\\ot-engineer\\PLC-projecten\\Dendermonde - 100026\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
+    }
+  ],
+  "octoplant_checkout": {
+    "checkout_executed": true,
+    "resolved_identity": {
+      "installation_name": "Dendermonde",
+      "installation_folder": "100026 - Dendermonde",
+      "plc_name": "PLC 2",
+      "project_folder": "100026 - Dendermonde, PLC02_CE"
+    },
+    "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE",
+    "local_checkout_ref": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE",
+    "source_version": null
+  },
+  "evidence": [
+    {
+      "captured_at": "2026-09-09T09:45:54Z",
+      "type": "octoplant_resolution",
+      "resolved_identity": {
+        "installation_name": "Dendermonde",
+        "installation_folder": "100026 - Dendermonde",
+        "plc_name": "PLC 2",
+        "project_folder": "100026 - Dendermonde, PLC02_CE"
+      },
+      "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
+    },
+    {
+      "captured_at": "2026-09-09T09:45:54Z",
+      "type": "octoplant_checkout_completed",
+      "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE",
+      "local_path": "C:\\workspaces\\ot-engineer\\PLC-projecten\\Dendermonde - 100026\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
+    }
+  ],
+  "risks": [
+    {
+      "code": "octoplant-local-checkout",
+      "description": "Checkout content was copied to a local workspace; no shared archive was modified."
+    }
+  ]
+}
+```
+
 ### Terminal targeted-checkout failure
 
 Use this complete shape for return code `1`; replace only the request and
