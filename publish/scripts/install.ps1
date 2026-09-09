@@ -122,11 +122,13 @@ Write-OK "Dependencies geinstalleerd."
 
 # --- 3. Runtimepakket ---
 $wrapperExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\VDogCheckOut.exe"
+$checkinExe = Join-Path $Root "binaryTools\VDogCheckIn\publish\VDogCheckIn.exe"
 $credentialsExe = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.exe"
 $credentialsPreferences = Join-Path $Root "binaryTools\VDogCheckOut\publish\CredentialsManager.preferences.json"
 $credentialsSqliteNative = Join-Path $Root "binaryTools\VDogCheckOut\publish\e_sqlite3.dll"
 if (
     -not (Test-Path $wrapperExe -PathType Leaf) -or
+    -not (Test-Path $checkinExe -PathType Leaf) -or
     -not (Test-Path $credentialsExe -PathType Leaf) -or
     -not (Test-Path $credentialsPreferences -PathType Leaf) -or
     -not (Test-Path $credentialsSqliteNative -PathType Leaf)
@@ -137,6 +139,7 @@ if (
 Write-Step "Runtimepakket controleren"
 if (
     -not (Test-Path $wrapperExe -PathType Leaf) -or
+    -not (Test-Path $checkinExe -PathType Leaf) -or
     -not (Test-Path $credentialsExe -PathType Leaf) -or
     -not (Test-Path $credentialsPreferences -PathType Leaf) -or
     -not (Test-Path $credentialsSqliteNative -PathType Leaf)
@@ -144,6 +147,7 @@ if (
     Abort "Runtimepakket is onvolledig. Installeer de plugin opnieuw via de marketplace."
 }
 Write-OK "VDogCheckOut.exe aanwezig: $wrapperExe"
+Write-OK "VDogCheckIn.exe aanwezig: $checkinExe"
 Write-OK "CredentialsManager.exe aanwezig: $credentialsExe"
 Write-OK "CredentialsManager-instellingen aanwezig: $credentialsPreferences"
 Write-OK "SQLite native library aanwezig: $credentialsSqliteNative"

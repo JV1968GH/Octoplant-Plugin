@@ -1,16 +1,18 @@
 ---
 name: Octoplant
-version: 2.3.0
-description: "OctoPlant/versiondog MCP-kennis voor projectnavigatie, CLI-checkout en gecontroleerde checkoutvrijgave zonder versiecreatie."
+version: 2.3.1
+description: "OctoPlant/versiondog MCP-kennis voor gerichte checkout, artifactmirror en gecontroleerde checkoutvrijgave zonder versiecreatie."
 ---
 
 # Octoplant MCP
 
-De plugin biedt read-only navigatie, gerichte componentcheckout en uitsluitend
-een gecontroleerde check-in van exact één onveranderd component. Die vrijgave
-vereist directe gebruikersbevestiging en gebruikt altijd `Enabled=N`,
-`WithoutComparison=Y` en `ReleaseAfterCheckIn=Y`. Implementeer nooit
-maintenance mode, checkout-all of andere schrijfbewerkingen.
+De plugin voert de volledige lifecycle voor één component uit: read-only
+navigatie, gerichte componentcheckout, artifactmirror en een gecontroleerde
+vrijgave van de onveranderde native checkout. Gebruik hiervoor standaard
+`checkout_copy_and_release_component`. Die vrijgave vereist directe
+gebruikersbevestiging en gebruikt altijd `Enabled=N`, `WithoutComparison=Y`
+en `ReleaseAfterCheckIn=Y`. Implementeer nooit maintenance mode, checkout-all
+of andere schrijfbewerkingen.
 
 ## Gedeelde serverarchive: strikt read-only
 
@@ -27,9 +29,11 @@ PLC-nummer indien bekend.
 De tool leest bij elke oproep de actuele gedeelde serverarchive; gebruik dus
 geen hardgecodeerde of eerder onthouden mapnamen.
 
-Gebruik `component_path` voor `checkout_component`. Gebruik
-`archive_relative_path` alleen voor een bestaand INI-veld dat uitdrukkelijk
-een pad in de gedeelde filesystemarchive verwacht.
+Gebruik `component_path` voor `checkout_copy_and_release_component`. Gebruik
+`checkout_component` alleen wanneer de gebruiker uitdrukkelijk vraagt de
+native checkout behouden te laten. Gebruik `archive_relative_path` alleen voor
+een bestaand INI-veld dat uitdrukkelijk een pad in de gedeelde
+filesystemarchive verwacht.
 
 Geef altijd precies één componentpad of component-ID op. Gebruik nooit
 `checkout_all`, `--all`, een leeg componentpad of een andere brede checkout.

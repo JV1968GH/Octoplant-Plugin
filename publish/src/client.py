@@ -237,3 +237,34 @@ class OctoplantClient:
         )
         return {"returncode": result.returncode, "success": result.returncode == 0,
                 "component_path": component_path, "binary_output_suppressed": True}
+
+    async def checkout_copy_and_release_component(
+        self, workspace_path: str, installation_name: Optional[str],
+        cost_center: Optional[str], component_path: str, confirmed: bool,
+        with_backups: bool = False, number_of_archives: int = 1,
+        version: Optional[int] = None, with_std_libs: bool = False,
+        comment: Optional[str] = None,
+    ) -> dict[str, Any]:
+        if confirmed is not True:
+            raise OctoplantConfigError("Explicit confirmation is required before releasing a checkout.")
+        if self._resolve_workspace_path(workspace_path) is None:
+            raise OctoplantConfigError("workspace_path is required for checkout, copy, and release.")
+
+        checkout = await self.checkout_component(
+            workspace_path=workspace_path, installation_name=installation_name,
+            cost_center=cost_center, component_path=component_path,
+            with_backups=with_backups, number_of_archives=number_of_archives,
+            version=version, with_std_libs=with_std_libs, comment=comment,
+        )
+        if checkout["returncode"] != 0 or "mirror_returncode" in checkout:
+            return {
+                "success": False, "component_path": component_path, "checkout": checkout,
+                "release_executed": False, "binary_output_suppressed": True,
+            }
+
+        release = await self.checkin_unchanged_component(component_path, confirmed=True)
+        return {
+            "success": release["success"], "component_path": component_path,
+            "checkout": checkout, "release": release, "release_executed": True,
+            "binary_output_suppressed": True,
+        }
