@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 2.3.0
+version: 2.3.1
 description: "OctoPlant/versiondog MCP-kennis voor projectnavigatie, CLI-checkout en gecontroleerde checkoutvrijgave zonder versiecreatie."
 ---
 
