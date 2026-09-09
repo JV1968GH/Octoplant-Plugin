@@ -173,6 +173,27 @@ Deze tool gebruikt altijd de lokale clientarchive, maakt nooit een versie
 de checkout vrij (`ReleaseAfterCheckIn=Y`). Maintenance mode en iedere andere
 Octoplant-mutatie blijven uitgesloten.
 
+### `checkout_copy_and_release_component`
+
+Voert de volledige lifecycle voor één component in de plugin uit: gerichte
+checkout, artifactmirror en daarna de versieloze vrijgave van de native
+checkout. De vrijgave gebeurt uitsluitend als checkout én mirror slagen en
+vereist directe gebruikersbevestiging:
+
+```
+checkout_copy_and_release_component(
+    workspace_path = "C:\\pad\\naar\\de\\hoofdchat-workspace",
+    installation_name = "{installatie-naam}",
+    cost_center = "{kostenplaats}",
+    component_path = "\RWZI's\{installatiemap}\{PLC-project}",
+    confirmed = true
+)
+```
+
+Gebruik deze tool wanneer het resultaat lokaal beschikbaar moet zijn maar de
+bovenliggende orchestrator geen afzonderlijke Octoplant-stappen hoeft te
+plannen. Bij een checkout- of mirrorfout wordt geen vrijgave aangeroepen.
+
 ---
 
 ## Archiefstructuur — padopbouw

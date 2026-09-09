@@ -14,10 +14,14 @@ gespiegeld. Het component komt op:
 ```
 
 Wanneer `workspace_path` ontbreekt, retourneert de tool de componentlocatie in
-de lokale clientarchive. Een checkout kan alleen worden vrijgegeven met
-`checkin_unchanged_component` na directe gebruikersbevestiging. Die native
-check-in maakt nooit een versie (`Enabled=N`), slaat vergelijking over
-(`WithoutComparison=Y`) en geeft de checkout vrij (`ReleaseAfterCheckIn=Y`).
+de lokale clientarchive. Gebruik voor de volledige lifecycle
+`checkout_copy_and_release_component`: die vereist een absolute
+`workspace_path` en voert de native vrijgave alleen uit nadat de checkout én
+artifactmirror zijn geslaagd. De tool vereist directe gebruikersbevestiging.
+`checkin_unchanged_component` blijft beschikbaar voor een afzonderlijke,
+bevestigde vrijgave. De native check-in maakt nooit een versie (`Enabled=N`),
+slaat vergelijking over (`WithoutComparison=Y`) en geeft de checkout vrij
+(`ReleaseAfterCheckIn=Y`).
 
 Gebruik voor de tool altijd `component_path` uit `resolve_project`; voeg de
 fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.

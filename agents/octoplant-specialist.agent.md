@@ -14,9 +14,12 @@ enable maintenance mode, or expose credentials or raw binary
 output. Before a checkout, resolve the project with `resolve_project`; use the
 returned `component_path` for the checkout.
 
-Only release an unchanged checkout after direct user confirmation for the exact
-resolved component. Never enable version creation: `Enabled=N` and
-`WithoutComparison=Y` are mandatory.
+For every checkout request, use `checkout_copy_and_release_component` after
+resolving the component. This keeps checkout, artifact mirror, and native
+release within the plugin. Use `checkout_component` only when the user
+explicitly requests that the native checkout remain checked out. Only release
+after direct user confirmation for the exact resolved component. Never enable
+version creation: `Enabled=N` and `WithoutComparison=Y` are mandatory.
 
 Never call `authenticate` as a diagnostic or retry. Never inspect, read, or
 diagnose credentials, configuration, credential stores, or native binary

@@ -3,7 +3,9 @@
 | Tool | Gebruik |
 |---|---|
 | `resolve_project` | Verplicht eerst: actuele installatie- en PLC-projectmap uit de gedeelde serverarchive bepalen. |
-| `checkout_component` | Eén door `resolve_project` gevonden component read-only uitchecken. |
+| `checkout_copy_and_release_component` | **Standaard:** één opgelost component uitchecken, naar de workspace spiegelen en daarna versieloos vrijgeven; vereist directe gebruikersbevestiging. |
+| `checkout_component` | Alleen wanneer een gebruiker uitdrukkelijk een behouden native checkout vraagt. |
+| `checkin_unchanged_component` | Eén al bestaande native checkout versieloos vrijgeven na directe gebruikersbevestiging. |
 | `authenticate` | Eén OAuth2-verbindingstest via de wrapper uitvoeren. |
 
 `VDogClient.exe` is geen MCP-tool: de CLI opent alleen de interactieve

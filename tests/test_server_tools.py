@@ -39,6 +39,8 @@ class PluginPackageTests(unittest.TestCase):
         self.assertIn("exactly one `octoplant.*` work_request", source_profile)
         self.assertIn("Enabled=N", source_profile)
         self.assertIn("WithoutComparison=Y", source_profile)
+        self.assertIn("For every checkout request", source_profile)
+        self.assertIn("checkout_copy_and_release_component", source_profile)
         self.assertIn("correlation_id", source_profile)
         self.assertIn("step_id", source_profile)
 
@@ -166,6 +168,10 @@ class PluginPackageTests(unittest.TestCase):
             f"**Release:** {version}",
             (self._root / "README.md").read_text(encoding="utf-8"),
         )
+        self.assertIn(
+            "checkout_copy_and_release_component",
+            source_skill,
+        )
 
 
 class ServerInitializationTests(unittest.TestCase):
@@ -187,6 +193,7 @@ class ServerInitializationTests(unittest.TestCase):
             {
                 "authenticate",
                 "checkout_component",
+                "checkout_copy_and_release_component",
                 "checkin_unchanged_component",
                 "resolve_project",
             },
@@ -368,6 +375,75 @@ class WorkspaceResolutionTests(unittest.TestCase):
         )
         self.assertTrue(result["success"])
         self.assertTrue(result["binary_output_suppressed"])
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_confirmed_lifecycle_mirrors_then_releases(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            native_checkout = Path(workspace) / "clientarchive"
+
+            checkout_result = subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout=json.dumps({"checkout_path": str(native_checkout)}),
+                stderr="",
+            )
+            release_result = subprocess.CompletedProcess(args=[], returncode=0)
+            with patch(
+                "src.client.subprocess.run",
+                side_effect=[checkout_result, subprocess.CompletedProcess(args=[], returncode=0), release_result],
+            ) as run:
+                result = asyncio.run(
+                    client.checkout_copy_and_release_component(
+                        workspace_path=workspace,
+                        installation_name="Example installation",
+                        cost_center="100026",
+                        component_path=r"\{root}\{installation}\{plc-project}",
+                        confirmed=True,
+                    )
+                )
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["release_executed"])
+        self.assertEqual(run.call_args_list[1].args[0][0], "robocopy")
+        self.assertEqual(
+            run.call_args_list[2].args[0],
+            [
+                client._vdogcheckin_exe,
+                "checkin",
+                "--json",
+                r"\{root}\{installation}\{plc-project}",
+            ],
+        )
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_lifecycle_does_not_release_after_mirror_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            checkout_result = subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout=json.dumps({"checkout_path": workspace}),
+                stderr="",
+            )
+            mirror_failure = subprocess.CompletedProcess(args=[], returncode=8)
+            with patch(
+                "src.client.subprocess.run",
+                side_effect=[checkout_result, mirror_failure],
+            ) as run:
+                result = asyncio.run(
+                    client.checkout_copy_and_release_component(
+                        workspace_path=workspace,
+                        installation_name="Example installation",
+                        cost_center="100026",
+                        component_path=r"\{root}\{installation}\{plc-project}",
+                        confirmed=True,
+                    )
+                )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["release_executed"])
+        self.assertEqual(run.call_count, 2)
 
 
 if __name__ == "__main__":
