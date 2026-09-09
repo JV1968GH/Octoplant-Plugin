@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 2.2.0
+version: 2.2.1
 description: "OctoPlant/versiondog MCP-kennis voor read-only projectnavigatie in de gedeelde serverarchive en CLI-checkout. Gebruik voor installaties, kostenplaatsen, PLC-projecten, ARCHIVE, RWZI's, PS, resolve_project en VDogAutoCheckOut.exe."
 ---
 
