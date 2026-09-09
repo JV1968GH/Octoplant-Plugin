@@ -7,8 +7,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
+from uuid import UUID
 
 from src.client import OctoplantClient, OctoplantConfigError
 
@@ -35,6 +37,97 @@ class PluginPackageTests(unittest.TestCase):
         self.assertIn("exactly one read-only `octoplant.*` work_request", source_profile)
         self.assertIn("correlation_id", source_profile)
         self.assertIn("step_id", source_profile)
+
+    def test_documents_a_complete_generic_result_for_checkout_returncode_one(self) -> None:
+        profile = (self._root / self._profile_path).read_text()
+        _, separator, remaining = profile.partition(
+            "### Terminal targeted-checkout failure"
+        )
+        self.assertTrue(separator)
+        example = remaining.split("```json", 1)[1].split("```", 1)[0]
+        result = json.loads(example)
+
+        self.assertSetEqual(
+            set(result),
+            {
+                "schema_version",
+                "correlation_id",
+                "step_id",
+                "status",
+                "summary",
+                "output_artifacts",
+                "octoplant_checkout",
+                "evidence",
+                "risks",
+                "errors",
+            },
+        )
+        self.assertEqual(result["schema_version"], "1.2")
+        UUID(result["correlation_id"])
+        self.assertTrue(result["step_id"])
+        self.assertEqual(result["status"], "failed")
+        self.assertSetEqual(
+            set(result["octoplant_checkout"]),
+            {
+                "checkout_executed",
+                "resolved_identity",
+                "component_path",
+                "local_checkout_ref",
+                "source_version",
+            },
+        )
+        self.assertTrue(result["octoplant_checkout"]["checkout_executed"])
+        self.assertIsNone(result["octoplant_checkout"]["local_checkout_ref"])
+        self.assertSetEqual(
+            set(result["errors"][0]), {"code", "returncode", "message"}
+        )
+        self.assertEqual(result["errors"][0]["returncode"], 1)
+        self.assertEqual(
+            result["errors"][0]["message"],
+            "The requested read-only targeted checkout could not be completed.",
+        )
+        self.assertTrue(result["evidence"])
+        self.assertTrue(result["risks"])
+        for evidence in result["evidence"]:
+            self.assertTrue(evidence["type"])
+            datetime.fromisoformat(evidence["captured_at"])
+        self.assertSetEqual(set(result["risks"][0]), {"code", "description"})
+        self.assertNotIn("stdout", json.dumps(result))
+        self.assertNotIn("stderr", json.dumps(result))
+
+    def test_requires_generic_handling_for_every_terminal_checkout_error(self) -> None:
+        profile = (self._root / self._profile_path).read_text()
+
+        self.assertIn("Return code `1` or unknown non-zero code", profile)
+        self.assertIn("Return code `10`", profile)
+        self.assertIn("Return code `1000`", profile)
+        self.assertIn("Tool invocation error without a return code", profile)
+        self.assertIn("Authentication failed.", profile)
+        self.assertIn("exact input `correlation_id`", profile)
+        self.assertIn("exact input `step_id`", profile)
+
+    def test_keeps_all_release_version_metadata_in_sync(self) -> None:
+        source_manifest = json.loads((self._root / "plugin.json").read_text())
+        package_manifest = json.loads(
+            (self._root / "publish" / "plugin.json").read_text()
+        )
+        source_project = (self._root / "pyproject.toml").read_text()
+        package_project = (self._root / "publish" / "pyproject.toml").read_text()
+        source_skill = (self._root / "skills" / "Octoplant" / "SKILL.md").read_text()
+        package_skill = (
+            self._root / "publish" / "skills" / "Octoplant" / "SKILL.md"
+        ).read_text()
+        version = source_manifest["version"]
+
+        self.assertEqual(package_manifest["version"], version)
+        self.assertIn(f'version = "{version}"', source_project)
+        self.assertIn(f'version = "{version}"', package_project)
+        self.assertIn(f"version: {version}", source_skill)
+        self.assertIn(f"version: {version}", package_skill)
+        self.assertIn(
+            f"**Release:** {version}",
+            (self._root / "README.md").read_text(encoding="utf-8"),
+        )
 
 
 class ServerInitializationTests(unittest.TestCase):
