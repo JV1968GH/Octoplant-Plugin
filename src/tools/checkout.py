@@ -4,7 +4,7 @@ Registreer tools via register_checkout_tools(mcp, client).
 Uitsluitend leesbewerkingen — check-in is expliciet uitgesloten.
 """
 
-from typing import Optional
+from typing import Literal, Optional
 
 from mcp.server.fastmcp import FastMCP
 
@@ -13,6 +13,26 @@ from src.client import OctoplantClient
 
 def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
     """Registreer alle checkout-gerelateerde MCP-tools op de gegeven FastMCP instantie."""
+
+    @mcp.tool()
+    async def inspect_checkout_destination(
+        workspace_path: Optional[str] = None,
+        installation_name: Optional[str] = None,
+        cost_center: Optional[str] = None,
+        component_path: Optional[str] = None,
+    ) -> dict:
+        """Inspecteer de exacte lokale checkoutmap zonder bestanden te wijzigen.
+
+        Roep deze tool direct na resolve_project aan. Bij status
+        existing_checkout_detected moet de gebruiker kiezen uit replace, reuse
+        of stop voordat checkout_component wordt aangeroepen.
+        """
+        return client.inspect_checkout_destination(
+            workspace_path=workspace_path,
+            installation_name=installation_name,
+            cost_center=cost_center,
+            component_path=component_path,
+        )
 
     @mcp.tool()
     async def checkout_component(
@@ -25,6 +45,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         version: Optional[int] = None,
         with_std_libs: bool = False,
         comment: Optional[str] = None,
+        collision_action: Optional[Literal["replace", "reuse", "stop"]] = None,
     ) -> dict:
         """Check een component of project uit vanuit OctoPlant/versiondog.
 
@@ -45,10 +66,17 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
             version:            Versienummer om te checken; standaard = huidige versie.
             with_std_libs:      True = gekoppelde standaardbibliotheken meechecken.
             comment:            Opmerking in het CheckIn-CheckOut-Log.
+            collision_action:   Alleen na een bestaande lokale checkout:
+                                replace verwijdert uitsluitend het exacte
+                                artifactpad en voert een verse checkout uit;
+                                reuse retourneert de bestaande paden zonder
+                                checkout; stop beëindigt de flow zonder wijziging.
 
         Returns:
-            Dict met returncode, status (not_found bij code 2), checkout_path,
-            artifact_path en een indicatie dat binaire output onderdrukt werd.
+            Dict met checkout_path en artifact_path. Statussen onderscheiden
+            checked_out, existing_checkout_reused en
+            existing_checkout_stopped; zonder selectie geeft een bestaande map
+            existing_checkout_requires_choice terug.
         """
         return await client.checkout_component(
             workspace_path=workspace_path,
@@ -60,4 +88,5 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
             version=version,
             with_std_libs=with_std_libs,
             comment=comment,
+            collision_action=collision_action,
         )

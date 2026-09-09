@@ -3,7 +3,7 @@
 MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) **read-only** toegang geeft tot
 OctoPlant/versiondog: projectpaden read-only oplossen en componenten uitchecken.
 
-**Release:** 2.2.0
+**Release:** 2.2.1
 
 > **Scope:** uitsluitend read-only navigatie en check-out. Check-in en maintenance mode zijn bewust uitgesloten.
 
@@ -134,6 +134,30 @@ Parameters:
 | `version` | int | Specifiek versienummer (standaard: huidig) |
 | `with_std_libs` | bool | Standaardbibliotheken meenemen |
 | `comment` | string | Opmerking in het CheckIn-CheckOut-Log |
+| `collision_action` | `replace`, `reuse` of `stop` | Alleen na detectie van een bestaande lokale checkout |
+
+### `inspect_checkout_destination`
+Controleert na `resolve_project` de exacte lokale artifactmap zonder iets te
+maken, te verwijderen of uit te checken. Gebruik dezelfde
+`workspace_path`, installatiegegevens en `component_path` als voor
+`checkout_component`.
+
+Bij `existing_checkout_detected` bevat het resultaat het concrete
+`checkout_path`, `artifact_path` en exact deze toegestane acties:
+`replace`, `reuse`, `stop`. Vraag de gebruiker om een keuze voordat een
+checkout wordt uitgevoerd:
+
+1. `replace`: verwijder alleen het gemelde lokale artifact en voer een verse,
+   gerichte checkout uit.
+2. `reuse`: retourneer de bestaande lokale versie en vervolg zonder checkout.
+3. `stop`: behoud de bestaande versie en stop de flow.
+
+`checkout_component` handhaaft dezelfde gate ook zonder voorafgaande
+inspectie: zonder expliciete keuze start hij de native client niet. De
+resultaatstatussen zijn `checked_out` (`fresh_checkout`),
+`existing_checkout_reused` (`reused_existing_checkout`) en
+`existing_checkout_stopped` (`stopped_existing_checkout`). Bestanden of links
+op de artifactbestemming zijn onveilig en worden nooit automatisch verwijderd.
 
 ### `resolve_project`
 Roep deze tool aan bij de start van elke OctoPlant-sessie, vóór een check-out.

@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 2.2.0
+version: 2.2.1
 description: "OctoPlant/versiondog MCP-kennis voor read-only projectnavigatie in de gedeelde serverarchive en CLI-checkout. Gebruik voor installaties, kostenplaatsen, PLC-projecten, ARCHIVE, RWZI's, PS, resolve_project en VDogAutoCheckOut.exe."
 ---
 
@@ -32,6 +32,14 @@ een pad in de gedeelde filesystemarchive verwacht.
 
 Geef altijd precies één componentpad of component-ID op. Gebruik nooit
 `checkout_all`, `--all`, een leeg componentpad of een andere brede checkout.
+
+Roep na `resolve_project` altijd `inspect_checkout_destination` aan met
+dezelfde initiële handoff-workspace en installatiegegevens. Als de status
+`existing_checkout_detected` is, vraag expliciet om precies één keuze:
+`replace` (alleen het gemelde lokale artifactpad verwijderen en vers
+uitchecken), `reuse` (de bestaande lokale versie retourneren) of `stop`
+(ongewijzigd stoppen). Roep bij een bestaande checkout nooit
+`checkout_component` zonder deze expliciete keuze aan.
 
 ## Referenties
 
