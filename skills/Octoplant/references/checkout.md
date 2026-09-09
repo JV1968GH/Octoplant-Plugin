@@ -25,3 +25,16 @@ slaat vergelijking over (`WithoutComparison=Y`) en geeft de checkout vrij
 
 Gebruik voor de tool altijd `component_path` uit `resolve_project`; voeg de
 fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.
+
+## Resultaatafronding
+
+Na iedere ontvangen `work_request` levert de specialist, voor hij idle wordt,
+precies een volledig en schema-geldig `work_result` v1.2 JSON-object. Behoud
+`correlation_id` en `step_id` exact; neem `status`, `output_artifacts`,
+niet-lege `evidence` en niet-lege `risks` altijd op. Gebruik geen proza,
+tooluitvoer of idle als vervanging.
+
+Bij `completed`, `blocked`, `failed`, `ambiguous`, `needs_input` en `unsafe`
+blijft het resultaat niet-sensitief. `output_artifacts` is aanwezig en bevat
+alleen objecten met exact `ref`, `kind` en `local_path`; gebruik `[]` wanneer
+geen lokaal artifact bestaat.
