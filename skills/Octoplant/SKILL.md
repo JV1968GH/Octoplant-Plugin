@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 2.3.2
+version: 2.3.3
 description: "OctoPlant/versiondog MCP-kennis voor gerichte checkout, artifactmirror en gecontroleerde checkoutvrijgave zonder versiecreatie."
 ---
 
@@ -38,6 +38,13 @@ filesystemarchive verwacht.
 Geef altijd precies één componentpad of component-ID op. Gebruik nooit
 `checkout_all`, `--all`, een leeg componentpad of een andere brede checkout.
 
+## Logische workflowcapaciteiten
+
+`octoplant.resolve_project_context` wordt uitgevoerd met `resolve_project`.
+`octoplant.checkout_copy_release` resolveert eerst en gebruikt vervolgens
+uitsluitend `checkout_copy_and_release_component`; splits deze lifecycle niet
+over `checkout_component` en `checkin_unchanged_component`.
+
 ## Verplichte work-result afronding
 
 Een Octoplant-specialist rondt iedere ontvangen `work_request` af voordat het
@@ -47,11 +54,15 @@ altijd `status`, `output_artifacts`, niet-lege `evidence` en niet-lege `risks`
 op. Het JSON-object is de volledige eindreactie; proza, tooluitvoer of idle
 worden nooit als resultaat gebruikt.
 
-`output_artifacts` is altijd aanwezig (leeg als geen artifact bestaat) en elk
-item heeft uitsluitend `ref`, `kind` en `local_path`. Gebruik voor
-`completed`, `blocked`, `failed`, `ambiguous`, `needs_input` en `unsafe` steeds
-een veilig, niet-sensitief resultaat. Deel nooit credentials, configuratiewaarden,
-server- of archivedetails, of ruwe native uitvoer in bewijs, risico's of fouten.
+Voeg nooit top-level `type`, `result` of `skipped` toe. `output_artifacts` is
+altijd aanwezig (leeg als geen artifact bestaat) en elk item heeft uitsluitend
+`ref`, `kind` en `local_path`. Elk bewijsrecord heeft een ISO-8601
+`captured_at`. Gebruik voor `completed`, `blocked`, `failed`, `ambiguous`,
+`needs_input` en `unsafe` steeds een veilig, niet-sensitief resultaat.
+Gebruik `octoplant_checkout.resolved_identity` als object; de optionele string
+`resolved_project_identity` is alleen voor legacy downstream compatibiliteit.
+Deel nooit credentials, configuratiewaarden, server- of archivedetails, of
+ruwe native uitvoer in bewijs, risico's of fouten.
 
 ## Referenties
 

@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 from uuid import UUID
 
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 from src.client import OctoplantClient, OctoplantConfigError
 
@@ -21,6 +21,17 @@ class PluginPackageTests(unittest.TestCase):
     _root = Path(__file__).resolve().parents[1]
     _profile_path = Path("agents") / "octoplant-specialist.agent.md"
     _fixtures_path = Path("tests") / "fixtures"
+    _work_result_fields = {
+        "schema_version",
+        "correlation_id",
+        "step_id",
+        "status",
+        "summary",
+        "output_artifacts",
+        "octoplant_checkout",
+        "evidence",
+        "risks",
+    }
 
     def _load_fixture(self, name: str) -> dict:
         return json.loads((self._root / self._fixtures_path / name).read_text())
@@ -36,6 +47,17 @@ class PluginPackageTests(unittest.TestCase):
             (self._root / "contracts" / "work-result.schema.json").read_text()
         )
         Draft202012Validator(schema, format_checker=FormatChecker()).validate(result)
+
+    def _assert_exact_work_result_root(self, result: dict) -> None:
+        self.assertSetEqual(set(result), self._work_result_fields | ({"errors"} if "errors" in result else set()))
+        self.assertNotIn("type", result)
+        self.assertNotIn("result", result)
+        self.assertNotIn("skipped", result)
+        self.assertEqual(result["schema_version"], "1.2")
+        UUID(result["correlation_id"])
+        self.assertTrue(result["step_id"])
+        self.assertTrue(result["evidence"])
+        self.assertTrue(result["risks"])
 
     def test_registers_the_specialist_agent_in_source_and_package(self) -> None:
         source_manifest = json.loads((self._root / "plugin.json").read_text())
@@ -57,10 +79,16 @@ class PluginPackageTests(unittest.TestCase):
         self.assertIn("WithoutComparison=Y", source_profile)
         self.assertIn("For every checkout request", source_profile)
         self.assertIn("checkout_copy_and_release_component", source_profile)
+        self.assertIn("octoplant.resolve_project_context", source_profile)
+        self.assertIn("octoplant.checkout_copy_release", source_profile)
+        self.assertIn("do not substitute", source_profile)
         self.assertIn("correlation_id", source_profile)
         self.assertIn("step_id", source_profile)
         self.assertIn("before this child becomes idle", source_profile)
         self.assertIn("The one JSON object is the entire final response", source_profile)
+        self.assertIn("`type`, `result`, or `skipped` fields", source_profile)
+        self.assertIn("`captured_at` timestamp", source_profile)
+        self.assertIn("resolved_identity` is the canonical structured identity", source_profile)
 
     def test_publishes_the_same_work_result_contract(self) -> None:
         source_contract = (
@@ -89,25 +117,8 @@ class PluginPackageTests(unittest.TestCase):
             result, self._load_fixture("checkout-failed.work-result.json")
         )
         self._validate_work_result(result)
+        self._assert_exact_work_result_root(result)
 
-        self.assertSetEqual(
-            set(result),
-            {
-                "schema_version",
-                "correlation_id",
-                "step_id",
-                "status",
-                "summary",
-                "output_artifacts",
-                "octoplant_checkout",
-                "evidence",
-                "risks",
-                "errors",
-            },
-        )
-        self.assertEqual(result["schema_version"], "1.2")
-        UUID(result["correlation_id"])
-        self.assertTrue(result["step_id"])
         self.assertEqual(result["status"], "failed")
         self.assertSetEqual(
             set(result["octoplant_checkout"]),
@@ -129,14 +140,13 @@ class PluginPackageTests(unittest.TestCase):
             result["errors"][0]["message"],
             "The requested read-only targeted checkout could not be completed.",
         )
-        self.assertTrue(result["evidence"])
-        self.assertTrue(result["risks"])
         for evidence in result["evidence"]:
             self.assertTrue(evidence["type"])
             datetime.fromisoformat(evidence["captured_at"])
         self.assertSetEqual(set(result["risks"][0]), {"code", "description"})
         self.assertNotIn("stdout", json.dumps(result))
         self.assertNotIn("stderr", json.dumps(result))
+        self.assertNotIn("traceback", json.dumps(result).lower())
 
     def test_requires_generic_handling_for_every_terminal_checkout_error(self) -> None:
         profile = (self._root / self._profile_path).read_text()
@@ -157,7 +167,7 @@ class PluginPackageTests(unittest.TestCase):
         ):
             self.assertIn(f"`{status}`", profile)
         self.assertIn(
-            "each entry must\ncontain exactly `ref`, `kind`, and `local_path`",
+            "each entry must contain exactly\n`ref`, `kind`, and `local_path`",
             profile,
         )
 
@@ -168,6 +178,7 @@ class PluginPackageTests(unittest.TestCase):
         )
 
         self._validate_work_result(result)
+        self._assert_exact_work_result_root(result)
 
         self.assertEqual(result["status"], "completed")
         self.assertTrue(result["output_artifacts"])
@@ -179,6 +190,28 @@ class PluginPackageTests(unittest.TestCase):
         self.assertEqual(
             result["octoplant_checkout"]["local_checkout_ref"],
             result["output_artifacts"][0]["ref"],
+        )
+        self.assertIsInstance(result["octoplant_checkout"]["resolved_identity"], dict)
+        self.assertNotIn("resolved_project_identity", result["octoplant_checkout"])
+        self.assertIn(
+            "octoplant_unchanged_release_completed",
+            {evidence["type"] for evidence in result["evidence"]},
+        )
+
+    def test_documents_schema_valid_completed_not_found_result(self) -> None:
+        result = self._profile_example("### Completed targeted checkout not found")
+        self.assertEqual(
+            result, self._load_fixture("checkout-not-found.work-result.json")
+        )
+
+        self._validate_work_result(result)
+        self._assert_exact_work_result_root(result)
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["output_artifacts"], [])
+        self.assertIsNone(result["octoplant_checkout"]["local_checkout_ref"])
+        self.assertNotIn(
+            "octoplant_unchanged_release_completed",
+            {evidence["type"] for evidence in result["evidence"]},
         )
 
     def test_requires_complete_work_result_fields(self) -> None:
@@ -199,6 +232,39 @@ class PluginPackageTests(unittest.TestCase):
         )
         self.assertEqual(schema["properties"]["evidence"]["minItems"], 1)
         self.assertEqual(schema["properties"]["risks"]["minItems"], 1)
+        self.assertSetEqual(
+            set(schema["properties"]["status"]["enum"]),
+            {"completed", "blocked", "needs_input", "failed", "unsafe", "ambiguous"},
+        )
+        self.assertIn(
+            "captured_at", schema["$defs"]["evidence"]["required"]
+        )
+        self.assertSetEqual(
+            set(schema["$defs"]["artifact"]["required"]),
+            {"ref", "kind", "local_path"},
+        )
+        checkout = schema["$defs"]["octoplantCheckout"]["properties"]
+        self.assertEqual(checkout["resolved_identity"]["$ref"], "#/$defs/projectIdentity")
+        self.assertEqual(checkout["resolved_project_identity"]["type"], "string")
+
+        valid_result = self._load_fixture("checkout-success.work-result.json")
+        valid_result["octoplant_checkout"]["resolved_project_identity"] = (
+            "Dendermonde PLC 2"
+        )
+        self._validate_work_result(valid_result)
+
+        for forbidden_key in ("type", "result", "skipped"):
+            invalid_result = self._load_fixture("checkout-success.work-result.json")
+            invalid_result[forbidden_key] = "invalid-wrapper"
+            with self.assertRaises(ValidationError):
+                self._validate_work_result(invalid_result)
+
+        invalid_identity = self._load_fixture("checkout-success.work-result.json")
+        invalid_identity["octoplant_checkout"]["resolved_identity"] = (
+            "Dendermonde PLC 2"
+        )
+        with self.assertRaises(ValidationError):
+            self._validate_work_result(invalid_identity)
 
     def test_keeps_all_release_version_metadata_in_sync(self) -> None:
         source_manifest = json.loads((self._root / "plugin.json").read_text())
@@ -395,6 +461,32 @@ class WorkspaceResolutionTests(unittest.TestCase):
             self.assertEqual(result["status"], "not_found")
             self.assertNotIn("--all", run.call_args.args[0])
 
+    def test_checkout_returns_a_generic_safe_failure(self) -> None:
+        client = OctoplantClient()
+
+        with patch(
+            "src.client.subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=[],
+                returncode=1,
+                stdout="native failure details",
+                stderr="native error details",
+            ),
+        ):
+            result = asyncio.run(
+                client.checkout_component(
+                    component_path=r"\{root}\{installation}\{plc-project}",
+                )
+            )
+
+        self.assertEqual(result["returncode"], 1)
+        self.assertEqual(result["status"], "Fout -- geen check-out mogelijk of minimaal een mislukt")
+        self.assertTrue(result["binary_output_suppressed"])
+        self.assertEqual(result["stdout"], "")
+        self.assertEqual(result["stderr"], "")
+        self.assertNotIn("native failure details", json.dumps(result))
+        self.assertNotIn("native error details", json.dumps(result))
+
     def test_checkin_requires_confirmation(self) -> None:
         client = OctoplantClient()
 
@@ -498,6 +590,29 @@ class WorkspaceResolutionTests(unittest.TestCase):
         self.assertFalse(result["success"])
         self.assertFalse(result["release_executed"])
         self.assertEqual(run.call_count, 2)
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_lifecycle_does_not_release_after_not_found(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            with patch(
+                "src.client.subprocess.run",
+                return_value=subprocess.CompletedProcess(args=[], returncode=2),
+            ) as run:
+                result = asyncio.run(
+                    client.checkout_copy_and_release_component(
+                        workspace_path=workspace,
+                        installation_name="Example installation",
+                        cost_center="100026",
+                        component_path=r"\{root}\{installation}\{missing-project}",
+                        confirmed=True,
+                    )
+                )
+
+        self.assertFalse(result["success"])
+        self.assertFalse(result["release_executed"])
+        self.assertEqual(run.call_count, 1)
+        self.assertNotIn("--all", run.call_args.args[0])
 
 
 if __name__ == "__main__":
