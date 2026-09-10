@@ -1,7 +1,7 @@
 {
   "name": "octoplant",
-  "description": "OctoPlant/versiondog projectnavigatie en beheerde checkoutlifecycle",
-  "version": "2.3.3",
+  "description": "Eenvoudige OctoPlant/versiondog-handoff voor veilige lokale projectkopie",
+  "version": "2.3.4",
   "author": {
     "name": "Jan Verrept",
     "email": "admin@octoplant.local"

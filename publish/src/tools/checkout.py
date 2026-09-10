@@ -62,8 +62,16 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         )
 
     @mcp.tool()
-    async def checkin_unchanged_component(component_path: str, confirmed: bool = False) -> dict:
-        """Geef precies een onveranderde lokale checkout vrij zonder nieuwe versie."""
+    async def checkin_unchanged_component(
+        component_path: str,
+        confirmed: bool = False,
+    ) -> dict:
+        """Geef precies een onveranderde lokale checkout vrij zonder nieuwe versie.
+
+        Gebruik uitsluitend het component_path uit resolve_project en zet
+        confirmed alleen op True na directe, expliciete gebruikersbevestiging.
+        De tool maakt nooit een nieuwe versie en accepteert geen brede paden.
+        """
         return await client.checkin_unchanged_component(component_path, confirmed)
 
     @mcp.tool()
@@ -79,7 +87,12 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         with_std_libs: bool = False,
         comment: Optional[str] = None,
     ) -> dict:
-        """Check out, mirror, and release one component as one confirmed lifecycle."""
+        """Check out, mirror, and release one component as one confirmed lifecycle.
+
+        Use component_path from resolve_project. The plugin releases the native
+        checkout only after the checkout and artifact mirror have succeeded.
+        Set confirmed to True only after direct, explicit user confirmation.
+        """
         return await client.checkout_copy_and_release_component(
             workspace_path=workspace_path,
             installation_name=installation_name,

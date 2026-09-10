@@ -211,8 +211,20 @@ class OctoplantClient:
                 artifact_path = checkout_root.joinpath(*component_parts)
                 mirror_result = await asyncio.to_thread(
                     subprocess.run,
-                    ["robocopy", str(component_source), str(artifact_path), "/MIR", "/R:1", "/W:1", "/NFL", "/NDL", "/NP"],
-                    capture_output=True, text=True, cwd=self.runtime_path,
+                    [
+                        "robocopy",
+                        str(component_source),
+                        str(artifact_path),
+                        "/MIR",
+                        "/R:1",
+                        "/W:1",
+                        "/NFL",
+                        "/NDL",
+                        "/NP",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=self.runtime_path,
                 )
                 if mirror_result.returncode > 7:
                     response["status"] = "Checkout geslaagd, maar artifactmirror mislukt"
@@ -223,48 +235,93 @@ class OctoplantClient:
             response["status"] = "not_found"
         return response
 
-    async def checkin_unchanged_component(self, component_path: str, confirmed: bool) -> dict[str, Any]:
+    async def checkin_unchanged_component(
+        self, component_path: str, confirmed: bool
+    ) -> dict[str, Any]:
+        """Release exactly one unchanged native checkout without creating a version."""
         if confirmed is not True:
-            raise OctoplantConfigError("Explicit confirmation is required before releasing a checkout.")
-        component_parts = tuple(part for part in component_path.replace("/", "\\").split("\\") if part)
-        if not component_path.startswith(("\\", "/")) or not component_parts or any(part in {".", ".."} for part in component_parts):
-            raise OctoplantConfigError("component_path must be a relative Octoplant component path.")
-        if not Path(self._vdogcheckin_exe).exists():
-            raise OctoplantConfigError("VDogCheckIn.exe ontbreekt; installeer de plugin opnieuw.")
-        result = await asyncio.to_thread(
-            subprocess.run, [self._vdogcheckin_exe, "checkin", "--json", component_path],
-            capture_output=True, text=True, cwd=self.runtime_path,
+            raise OctoplantConfigError(
+                "Explicit confirmation is required before releasing a checkout."
+            )
+        component_parts = tuple(
+            part for part in component_path.replace("/", "\\").split("\\") if part
         )
-        return {"returncode": result.returncode, "success": result.returncode == 0,
-                "component_path": component_path, "binary_output_suppressed": True}
+        if (
+            not component_path.startswith(("\\", "/"))
+            or not component_parts
+            or any(part in {".", ".."} for part in component_parts)
+        ):
+            raise OctoplantConfigError(
+                "component_path must be a relative Octoplant component path."
+            )
+        if not Path(self._vdogcheckin_exe).exists():
+            raise OctoplantConfigError(
+                "VDogCheckIn.exe ontbreekt; installeer de plugin opnieuw."
+            )
+
+        result = await asyncio.to_thread(
+            subprocess.run,
+            [self._vdogcheckin_exe, "checkin", "--json", component_path],
+            capture_output=True,
+            text=True,
+            cwd=self.runtime_path,
+        )
+        return {
+            "returncode": result.returncode,
+            "success": result.returncode == 0,
+            "component_path": component_path,
+            "binary_output_suppressed": True,
+        }
 
     async def checkout_copy_and_release_component(
-        self, workspace_path: str, installation_name: Optional[str],
-        cost_center: Optional[str], component_path: str, confirmed: bool,
-        with_backups: bool = False, number_of_archives: int = 1,
-        version: Optional[int] = None, with_std_libs: bool = False,
+        self,
+        workspace_path: str,
+        installation_name: Optional[str],
+        cost_center: Optional[str],
+        component_path: str,
+        confirmed: bool,
+        with_backups: bool = False,
+        number_of_archives: int = 1,
+        version: Optional[int] = None,
+        with_std_libs: bool = False,
         comment: Optional[str] = None,
     ) -> dict[str, Any]:
+        """Perform the complete targeted checkout, mirror, and release lifecycle."""
         if confirmed is not True:
-            raise OctoplantConfigError("Explicit confirmation is required before releasing a checkout.")
+            raise OctoplantConfigError(
+                "Explicit confirmation is required before releasing a checkout."
+            )
         if self._resolve_workspace_path(workspace_path) is None:
-            raise OctoplantConfigError("workspace_path is required for checkout, copy, and release.")
+            raise OctoplantConfigError(
+                "workspace_path is required for checkout, copy, and release."
+            )
 
         checkout = await self.checkout_component(
-            workspace_path=workspace_path, installation_name=installation_name,
-            cost_center=cost_center, component_path=component_path,
-            with_backups=with_backups, number_of_archives=number_of_archives,
-            version=version, with_std_libs=with_std_libs, comment=comment,
+            workspace_path=workspace_path,
+            installation_name=installation_name,
+            cost_center=cost_center,
+            component_path=component_path,
+            with_backups=with_backups,
+            number_of_archives=number_of_archives,
+            version=version,
+            with_std_libs=with_std_libs,
+            comment=comment,
         )
         if checkout["returncode"] != 0 or "mirror_returncode" in checkout:
             return {
-                "success": False, "component_path": component_path, "checkout": checkout,
-                "release_executed": False, "binary_output_suppressed": True,
+                "success": False,
+                "component_path": component_path,
+                "checkout": checkout,
+                "release_executed": False,
+                "binary_output_suppressed": True,
             }
 
         release = await self.checkin_unchanged_component(component_path, confirmed=True)
         return {
-            "success": release["success"], "component_path": component_path,
-            "checkout": checkout, "release": release, "release_executed": True,
+            "success": release["success"],
+            "component_path": component_path,
+            "checkout": checkout,
+            "release": release,
+            "release_executed": True,
             "binary_output_suppressed": True,
         }

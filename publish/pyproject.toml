@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta:__legacy__"
 
 [project]
 name = "octoplant-mcp"
-version = "2.3.3"
-description = "MCP server voor Octoplant/versiondog"
+version = "2.3.4"
+description = "Simple safe handoff interface for Octoplant/versiondog"
 requires-python = ">=3.11"
 dependencies = [
     "mcp[cli]>=1.0,<2",
