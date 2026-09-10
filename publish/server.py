@@ -43,7 +43,7 @@ mcp = FastMCP(
         "De Octoplant Specialist verwerkt een zichtbare "
         "'⬇️✋ HANDOFF — OctoPlant' en sluit af met één "
         "'↩️ RESULTAAT — <terminal state>' bericht. "
-        "Een check-in maakt nooit een versie en vereist expliciete bevestiging. "
+        "Een check-in maakt nooit een versie. "
         "Maintenance mode en andere mutaties zijn niet beschikbaar."
     ),
     **({"icons": _icons} if _icons is not None else {}),

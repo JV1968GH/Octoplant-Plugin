@@ -347,16 +347,6 @@ class WorkspaceResolutionTests(unittest.TestCase):
         self.assertNotIn("native failure details", json.dumps(result))
         self.assertNotIn("native error details", json.dumps(result))
 
-    def test_checkin_requires_confirmation(self) -> None:
-        client = OctoplantClient()
-
-        with self.assertRaisesRegex(OctoplantConfigError, "Explicit confirmation"):
-            asyncio.run(
-                client.checkin_unchanged_component(
-                    r"\{root}\{installation}\{plc-project}", False
-                )
-            )
-
     def test_checkin_uses_the_dedicated_wrapper(self) -> None:
         client = OctoplantClient()
 
@@ -366,7 +356,7 @@ class WorkspaceResolutionTests(unittest.TestCase):
         ) as run:
             result = asyncio.run(
                 client.checkin_unchanged_component(
-                    r"\{root}\{installation}\{plc-project}", True
+                    r"\{root}\{installation}\{plc-project}"
                 )
             )
 
@@ -383,7 +373,7 @@ class WorkspaceResolutionTests(unittest.TestCase):
         self.assertTrue(result["binary_output_suppressed"])
 
     @patch.dict("src.client.os.environ", {}, clear=True)
-    def test_confirmed_lifecycle_mirrors_then_releases(self) -> None:
+    def test_lifecycle_mirrors_then_releases(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()
             native_checkout = Path(workspace) / "clientarchive"
@@ -409,7 +399,6 @@ class WorkspaceResolutionTests(unittest.TestCase):
                         installation_name="Example installation",
                         cost_center="100026",
                         component_path=r"\{root}\{installation}\{plc-project}",
-                        confirmed=True,
                     )
                 )
 
@@ -447,7 +436,6 @@ class WorkspaceResolutionTests(unittest.TestCase):
                         installation_name="Example installation",
                         cost_center="100026",
                         component_path=r"\{root}\{installation}\{plc-project}",
-                        confirmed=True,
                     )
                 )
 
@@ -469,7 +457,6 @@ class WorkspaceResolutionTests(unittest.TestCase):
                         installation_name="Example installation",
                         cost_center="100026",
                         component_path=r"\{root}\{installation}\{missing-project}",
-                        confirmed=True,
                     )
                 )
 

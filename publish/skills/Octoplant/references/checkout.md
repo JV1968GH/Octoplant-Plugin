@@ -17,9 +17,8 @@ Wanneer `workspace_path` ontbreekt, retourneert de tool de componentlocatie in
 de lokale clientarchive. Gebruik voor de volledige lifecycle
 `checkout_copy_and_release_component`: die vereist een absolute
 `workspace_path` en voert de native vrijgave alleen uit nadat de checkout én
-artifactmirror zijn geslaagd. De tool vereist directe gebruikersbevestiging.
-`checkin_unchanged_component` blijft beschikbaar voor een afzonderlijke,
-bevestigde vrijgave. De native check-in maakt nooit een versie (`Enabled=N`),
+artifactmirror zijn geslaagd. `checkin_unchanged_component` blijft beschikbaar
+voor een afzonderlijke vrijgave. De native check-in maakt nooit een versie (`Enabled=N`),
 slaat vergelijking over (`WithoutComparison=Y`) en geeft de checkout vrij
 (`ReleaseAfterCheckIn=Y`).
 
@@ -29,8 +28,8 @@ fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.
 ## Gedeelde handoff en resultaat
 
 Geef de specialist een zichtbaar `⬇️✋ HANDOFF — OctoPlant`-blok met de actie,
-installatie of kostenplaats, het PLC indien bekend, een absolute workspace en
-directe bevestiging voor een lokale projectkopie. De specialist resolveert de
+installatie of kostenplaats, het PLC indien bekend en een absolute workspace
+voor een lokale projectkopie. De specialist resolveert de
 component zelf en voert checkout, lokale mirror en versieloze vrijgave als één
 veilige flow uit.
 

@@ -7,7 +7,7 @@ checkoutvrijgave biedt.
 **Release:** 3.0.0
 
 > **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
-> bevestigde check-in zonder nieuwe versie. Maintenance mode en andere mutaties
+> check-in zonder nieuwe versie. Maintenance mode en andere mutaties
 > zijn uitgesloten.
 
 ---
@@ -177,13 +177,11 @@ bijbehorende read-only locatie in de gedeelde archive.
 
 ### `checkin_unchanged_component`
 
-Geeft één gerichte, onveranderde native checkout vrij na directe
-gebruikersbevestiging:
+Geeft één gerichte, onveranderde native checkout vrij:
 
 ```
 checkin_unchanged_component(
-    component_path = "\RWZI's\{installatiemap}\{PLC-project}",
-    confirmed = true
+    component_path = "\RWZI's\{installatiemap}\{PLC-project}"
 )
 ```
 
@@ -196,16 +194,14 @@ Octoplant-mutatie blijven uitgesloten.
 
 Voert de volledige lifecycle voor één component in de plugin uit: gerichte
 checkout, artifactmirror en daarna de versieloze vrijgave van de native
-checkout. De vrijgave gebeurt uitsluitend als checkout én mirror slagen en
-vereist directe gebruikersbevestiging:
+checkout. De vrijgave gebeurt uitsluitend als checkout én mirror slagen:
 
 ```
 checkout_copy_and_release_component(
     workspace_path = "C:\\pad\\naar\\de\\hoofdchat-workspace",
     installation_name = "{installatie-naam}",
     cost_center = "{kostenplaats}",
-    component_path = "\RWZI's\{installatiemap}\{PLC-project}",
-    confirmed = true
+    component_path = "\RWZI's\{installatiemap}\{PLC-project}"
 )
 ```
 
@@ -252,8 +248,8 @@ checkout als fallback.
 - `CredentialsManager.exe` geeft credentials en instellingen alleen via een per aanvraag gemaakte private named pipe door; stdout, stderr, logs en MCP-responses bevatten nooit waarden
 - Authenticatie- en configuratiefouten geven uitsluitend gestandaardiseerde exitcodes; credentials, tokens en ruwe uitvoer van onderliggende binaries komen niet in logging of tool-responses
 - Bearer-tokens worden nooit gelogd of in tool-responses opgenomen
-- De plugin staat uitsluitend de expliciet bevestigde, versieloze
-  checkoutvrijgave toe; alle andere Octoplant-mutaties zijn geblokkeerd
+- De plugin staat uitsluitend de versieloze checkoutvrijgave van één
+  gevalideerd component toe; alle andere Octoplant-mutaties zijn geblokkeerd
 
 ---
 

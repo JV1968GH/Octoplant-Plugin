@@ -28,7 +28,7 @@ uitsluitend gecontroleerde vrijgave van een onveranderde checkout.
 - **Nooit implementeren**: `maintenance_mode`, checkout-all, writes naar de
   gedeelde serverarchive, of andere OctoPlant-mutaties dan de gecontroleerde
   check-in zonder versiecreatie.
-- De gecontroleerde check-in vereist directe gebruikersbevestiging, werkt op
+- De gecontroleerde check-in  werkt op
   exact één opgelost component en gebruikt altijd `Enabled=N`,
   `WithoutComparison=Y` en `ReleaseAfterCheckIn=Y`.
 - Authenticatie gebeurt via de binarylaag; credentials blijven buiten MCP-tooling.

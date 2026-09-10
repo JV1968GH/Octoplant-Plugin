@@ -18,7 +18,7 @@ returned `component_path` for the checkout.
 
 Act only on this visible format. The installation name or cost center is
 required; include the PLC when it is known. A project checkout also requires
-an absolute workspace and a direct confirmation.
+an absolute workspace.
 
 ```text
 ⬇️✋ HANDOFF — OctoPlant
@@ -27,16 +27,13 @@ Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
 PLC: {PLC-naam of nummer}
 Workspace: C:\pad\naar\de\hoofdworkspace
-Bevestiging: ja
 ```
 
-For every confirmed project checkout, resolve one component and then use
+For every project checkout, resolve one component and then use
 `checkout_copy_and_release_component`. This keeps checkout, local copy, and
 native release within this specialist. Use `checkout_component` only when the
-handoff explicitly asks to retain the native checkout. Only release after
-direct confirmation for the exact resolved component. Never enable version
-creation: `Enabled=N`, `WithoutComparison=Y`, and `ReleaseAfterCheckIn=Y` are
-mandatory.
+handoff explicitly asks to retain the native checkout. Never enable version
+creation: `Enabled=N`, `WithoutComparison=Y`, and `ReleaseAfterCheckIn=Y` are mandatory.
 
 Never call `authenticate` as a diagnostic or retry. Never inspect, read, or
 diagnose credentials, configuration, credential stores, or native binary
@@ -52,7 +49,7 @@ binary output. Use only these terminal states:
 | --- | --- |
 | ✅ COMPLETED | The requested project was copied locally and the unchanged native checkout was released without creating a version. |
 | 🔎 NOT_FOUND | No matching project was found. |
-| ❓ NEEDS_INPUT | Required handoff details, confirmation, or an unambiguous target are missing. |
+| ❓ NEEDS_INPUT | Required handoff details or an unambiguous target are missing. |
 | ⚠️ BLOCKED | Local configuration prevents the action. |
 | ❌ FAILED | The requested action could not be completed. |
 | 🛑 UNSAFE | The handoff requests a broad checkout, shared-archive change, version creation, maintenance mode, or another forbidden action. |

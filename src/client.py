@@ -235,14 +235,8 @@ class OctoplantClient:
             response["status"] = "not_found"
         return response
 
-    async def checkin_unchanged_component(
-        self, component_path: str, confirmed: bool
-    ) -> dict[str, Any]:
+    async def checkin_unchanged_component(self, component_path: str) -> dict[str, Any]:
         """Release exactly one unchanged native checkout without creating a version."""
-        if confirmed is not True:
-            raise OctoplantConfigError(
-                "Explicit confirmation is required before releasing a checkout."
-            )
         component_parts = tuple(
             part for part in component_path.replace("/", "\\").split("\\") if part
         )
@@ -279,7 +273,6 @@ class OctoplantClient:
         installation_name: Optional[str],
         cost_center: Optional[str],
         component_path: str,
-        confirmed: bool,
         with_backups: bool = False,
         number_of_archives: int = 1,
         version: Optional[int] = None,
@@ -287,10 +280,6 @@ class OctoplantClient:
         comment: Optional[str] = None,
     ) -> dict[str, Any]:
         """Perform the complete targeted checkout, mirror, and release lifecycle."""
-        if confirmed is not True:
-            raise OctoplantConfigError(
-                "Explicit confirmation is required before releasing a checkout."
-            )
         if self._resolve_workspace_path(workspace_path) is None:
             raise OctoplantConfigError(
                 "workspace_path is required for checkout, copy, and release."
@@ -316,7 +305,7 @@ class OctoplantClient:
                 "binary_output_suppressed": True,
             }
 
-        release = await self.checkin_unchanged_component(component_path, confirmed=True)
+        release = await self.checkin_unchanged_component(component_path)
         return {
             "success": release["success"],
             "component_path": component_path,
