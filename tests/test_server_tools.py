@@ -123,7 +123,7 @@ class PluginPackageTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         version = source_manifest["version"]
 
-        self.assertEqual(version, "2.3.4")
+        self.assertEqual(version, "3.0.0")
         self.assertEqual(package_manifest["version"], version)
         self.assertIn(f'version = "{version}"', source_project)
         self.assertIn(f'version = "{version}"', package_project)

@@ -4,7 +4,7 @@ MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) veilige
 OctoPlant/versiondog-navigatie, gerichte checkout en gecontroleerde
 checkoutvrijgave biedt.
 
-**Release:** 2.3.4
+**Release:** 3.0.0
 
 > **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
 > bevestigde check-in zonder nieuwe versie. Maintenance mode en andere mutaties
