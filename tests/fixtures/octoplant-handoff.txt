@@ -1,0 +1,7 @@
+⬇️✋ HANDOFF — OctoPlant
+Actie: project lokaal beschikbaar maken
+Installatie: {installatienaam}
+Kostenplaats: {kostenplaats}
+PLC: {PLC-naam of nummer}
+Workspace: C:\pad\naar\de\hoofdworkspace
+Bevestiging: ja

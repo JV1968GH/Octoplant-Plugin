@@ -26,15 +26,17 @@ slaat vergelijking over (`WithoutComparison=Y`) en geeft de checkout vrij
 Gebruik voor de tool altijd `component_path` uit `resolve_project`; voeg de
 fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.
 
-## Resultaatafronding
+## Gedeelde handoff en resultaat
 
-Na iedere ontvangen `work_request` levert de specialist, voor hij idle wordt,
-precies een volledig en schema-geldig `work_result` v1.2 JSON-object. Behoud
-`correlation_id` en `step_id` exact; neem `status`, `output_artifacts`,
-niet-lege `evidence` en niet-lege `risks` altijd op. Gebruik geen proza,
-tooluitvoer of idle als vervanging.
+Geef de specialist een zichtbaar `⬇️✋ HANDOFF — OctoPlant`-blok met de actie,
+installatie of kostenplaats, het PLC indien bekend, een absolute workspace en
+directe bevestiging voor een lokale projectkopie. De specialist resolveert de
+component zelf en voert checkout, lokale mirror en versieloze vrijgave als één
+veilige flow uit.
 
-Bij `completed`, `blocked`, `failed`, `ambiguous`, `needs_input` en `unsafe`
-blijft het resultaat niet-sensitief. `output_artifacts` is aanwezig en bevat
-alleen objecten met exact `ref`, `kind` en `local_path`; gebruik `[]` wanneer
-geen lokaal artifact bestaat.
+De enige eindvorm is `↩️ RESULTAAT — <terminal state>`, met een van:
+✅ COMPLETED, 🔎 NOT_FOUND, ❓ NEEDS_INPUT, ⚠️ BLOCKED, ❌ FAILED of 🛑 UNSAFE.
+Bij ✅ COMPLETED geeft het resultaat alleen een niet-sensitieve samenvatting
+en het lokale projectpad. Bij de overige states geeft het alleen een korte,
+niet-sensitieve toelichting. Geef geen JSON, toolpayloads, identifiers,
+evidence, risico's of lifecyclevelden weer.

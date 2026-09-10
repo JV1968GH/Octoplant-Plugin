@@ -5,8 +5,8 @@ RWZI-serverarchive. Deze locatie is niet via configuratie te wijzigen.
 
 Deze share is strikt **read-only** voor de plugin. Gebruik haar nooit als
 de instelling `OCTOPLANT_CLIENT_ARCHIVE_PATH` onder hoofdkaart `Octoplant`.
-Alle schrijf- en mirroracties horen uitsluitend
-in de lokale clientarchive en de sessieworkspace thuis.
+Alle schrijf- en mirroracties horen uitsluitend in de lokale clientarchive en
+de sessieworkspace thuis.
 
 ## Resolutieregels
 
@@ -25,13 +25,6 @@ Gebruik geen vaste naamgevingsconventie als vervanging voor deze scan: de
 archive is de bron van waarheid voor ontbrekende namen, omgekeerde
 kostenplaatsen en typefouten.
 
-De response bevat twee expliciete paden:
-
-```text
-component_path: \{hoofdmap}\{installatiemap}\{PLC-project}
-archive_relative_path: \{hoofdmap}\{installatiemap}\ARCHIVE\{PLC-project}
-```
-
-`component_path` is het pad voor `checkout_component`; de CLI-serverboom kent
-de filesystemmap `ARCHIVE` niet. `archive_relative_path` is uitsluitend voor
-INI-velden die expliciet een pad in de gedeelde archive verwachten.
+De specialist gebruikt de geresolveerde paden uitsluitend intern. Een gebruiker
+of orchestrator geeft alleen de zichtbare `⬇️✋ HANDOFF — OctoPlant`; de
+specialist geeft geen component- of archiefpad weer in het eindresultaat.

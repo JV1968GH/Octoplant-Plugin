@@ -1,4 +1,4 @@
-"""Focused MCP registration tests that do not require Octoplant configuration."""
+"""Focused MCP registration, handoff, and checkout lifecycle tests."""
 
 import asyncio
 import importlib
@@ -7,12 +7,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
-from uuid import UUID
-
-from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 from src.client import OctoplantClient, OctoplantConfigError
 
@@ -21,43 +17,19 @@ class PluginPackageTests(unittest.TestCase):
     _root = Path(__file__).resolve().parents[1]
     _profile_path = Path("agents") / "octoplant-specialist.agent.md"
     _fixtures_path = Path("tests") / "fixtures"
-    _work_result_fields = {
-        "schema_version",
-        "correlation_id",
-        "step_id",
-        "status",
-        "summary",
-        "output_artifacts",
-        "octoplant_checkout",
-        "evidence",
-        "risks",
-    }
+    _terminal_states = (
+        "✅ COMPLETED",
+        "🔎 NOT_FOUND",
+        "❓ NEEDS_INPUT",
+        "⚠️ BLOCKED",
+        "❌ FAILED",
+        "🛑 UNSAFE",
+    )
 
-    def _load_fixture(self, name: str) -> dict:
-        return json.loads((self._root / self._fixtures_path / name).read_text())
-
-    def _profile_example(self, heading: str) -> dict:
-        profile = (self._root / self._profile_path).read_text()
-        _, separator, remaining = profile.partition(heading)
-        self.assertTrue(separator)
-        return json.loads(remaining.split("```json", 1)[1].split("```", 1)[0])
-
-    def _validate_work_result(self, result: dict) -> None:
-        schema = json.loads(
-            (self._root / "contracts" / "work-result.schema.json").read_text()
-        )
-        Draft202012Validator(schema, format_checker=FormatChecker()).validate(result)
-
-    def _assert_exact_work_result_root(self, result: dict) -> None:
-        self.assertSetEqual(set(result), self._work_result_fields | ({"errors"} if "errors" in result else set()))
-        self.assertNotIn("type", result)
-        self.assertNotIn("result", result)
-        self.assertNotIn("skipped", result)
-        self.assertEqual(result["schema_version"], "1.2")
-        UUID(result["correlation_id"])
-        self.assertTrue(result["step_id"])
-        self.assertTrue(result["evidence"])
-        self.assertTrue(result["risks"])
+    def _load_fixture(self, name: str) -> str:
+        return (self._root / self._fixtures_path / name).read_text(
+            encoding="utf-8"
+        ).strip()
 
     def test_registers_the_specialist_agent_in_source_and_package(self) -> None:
         source_manifest = json.loads((self._root / "plugin.json").read_text())
@@ -68,217 +40,90 @@ class PluginPackageTests(unittest.TestCase):
         self.assertEqual(source_manifest["agents"], ["agents/"])
         self.assertEqual(package_manifest["agents"], ["agents/"])
 
-    def test_publishes_the_same_specialist_agent_profile(self) -> None:
-        source_profile = (self._root / self._profile_path).read_text()
-        package_profile = (self._root / "publish" / self._profile_path).read_text()
+    def test_publishes_the_same_shared_handoff_profile(self) -> None:
+        source_profile = (self._root / self._profile_path).read_text(encoding="utf-8")
+        package_profile = (
+            self._root / "publish" / self._profile_path
+        ).read_text(encoding="utf-8")
 
         self.assertEqual(source_profile, package_profile)
         self.assertIn("name: octoplant-specialist", source_profile)
-        self.assertIn("exactly one `octoplant.*` work_request", source_profile)
+        self.assertIn(self._load_fixture("octoplant-handoff.txt"), source_profile)
+        self.assertIn(self._load_fixture("octoplant-completed-result.txt"), source_profile)
+        self.assertIn("checkout_copy_and_release_component", source_profile)
         self.assertIn("Enabled=N", source_profile)
         self.assertIn("WithoutComparison=Y", source_profile)
-        self.assertIn("For every checkout request", source_profile)
-        self.assertIn("checkout_copy_and_release_component", source_profile)
-        self.assertIn("octoplant.resolve_project_context", source_profile)
-        self.assertIn("octoplant.checkout_copy_release", source_profile)
-        self.assertIn("do not substitute", source_profile)
-        self.assertIn("correlation_id", source_profile)
-        self.assertIn("step_id", source_profile)
-        self.assertIn("before this child becomes idle", source_profile)
-        self.assertIn("The one JSON object is the entire final response", source_profile)
-        self.assertIn("`type`, `result`, or `skipped` fields", source_profile)
-        self.assertIn("`captured_at` timestamp", source_profile)
-        self.assertIn("resolved_identity` is the canonical structured identity", source_profile)
+        self.assertIn("ReleaseAfterCheckIn=Y", source_profile)
+        self.assertIn("Do not delegate to APG, Control Expert", source_profile)
 
-    def test_publishes_the_same_work_result_contract(self) -> None:
-        source_contract = (
-            self._root / "contracts" / "work-result.schema.json"
-        ).read_text()
-        package_contract = (
-            self._root / "publish" / "contracts" / "work-result.schema.json"
-        ).read_text()
+    def test_documents_only_the_approved_terminal_states(self) -> None:
+        profile = (self._root / self._profile_path).read_text(encoding="utf-8")
+        skill = (self._root / "skills" / "Octoplant" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
 
-        self.assertEqual(source_contract, package_contract)
+        for state in self._terminal_states:
+            self.assertIn(state, profile)
+            self.assertIn(state, skill)
 
-    def test_publishes_the_same_work_result_workflow_docs(self) -> None:
+        completed_result = self._load_fixture("octoplant-completed-result.txt")
+        self.assertTrue(completed_result.startswith("↩️ RESULTAAT — ✅ COMPLETED"))
+        self.assertIn("Lokaal project:", completed_result)
+        for forbidden in (
+            "{",
+            "}",
+            "component_path",
+            "correlation_id",
+            "evidence",
+            "risks",
+            "work_result",
+        ):
+            self.assertNotIn(forbidden, completed_result)
+
+    def test_publishes_the_same_shared_interface_docs(self) -> None:
         for path in (
             Path("skills") / "Octoplant" / "SKILL.md",
             Path("skills") / "Octoplant" / "references" / "checkout.md",
+            Path("skills") / "Octoplant" / "references" / "mcp-tools.md",
+            Path("skills") / "Octoplant" / "references" / "navigation.md",
+            Path("skills") / "Octoplant" / "references" / "project-structure.md",
         ):
             self.assertEqual(
-                (self._root / path).read_text(),
-                (self._root / "publish" / path).read_text(),
+                (self._root / path).read_text(encoding="utf-8"),
+                (self._root / "publish" / path).read_text(encoding="utf-8"),
                 path,
             )
 
-    def test_documents_a_complete_generic_result_for_checkout_returncode_one(self) -> None:
-        result = self._profile_example("### Terminal targeted-checkout failure")
-        self.assertEqual(
-            result, self._load_fixture("checkout-failed.work-result.json")
-        )
-        self._validate_work_result(result)
-        self._assert_exact_work_result_root(result)
-
-        self.assertEqual(result["status"], "failed")
-        self.assertSetEqual(
-            set(result["octoplant_checkout"]),
-            {
-                "checkout_executed",
-                "resolved_identity",
-                "component_path",
-                "local_checkout_ref",
-                "source_version",
-            },
-        )
-        self.assertTrue(result["octoplant_checkout"]["checkout_executed"])
-        self.assertIsNone(result["octoplant_checkout"]["local_checkout_ref"])
-        self.assertSetEqual(
-            set(result["errors"][0]), {"code", "returncode", "message"}
-        )
-        self.assertEqual(result["errors"][0]["returncode"], 1)
-        self.assertEqual(
-            result["errors"][0]["message"],
-            "The requested read-only targeted checkout could not be completed.",
-        )
-        for evidence in result["evidence"]:
-            self.assertTrue(evidence["type"])
-            datetime.fromisoformat(evidence["captured_at"])
-        self.assertSetEqual(set(result["risks"][0]), {"code", "description"})
-        self.assertNotIn("stdout", json.dumps(result))
-        self.assertNotIn("stderr", json.dumps(result))
-        self.assertNotIn("traceback", json.dumps(result).lower())
-
-    def test_requires_generic_handling_for_every_terminal_checkout_error(self) -> None:
-        profile = (self._root / self._profile_path).read_text()
-
-        self.assertIn("Return code `1` or unknown non-zero code", profile)
-        self.assertIn("Return code `10`", profile)
-        self.assertIn("Return code `1000`", profile)
-        self.assertIn("Tool invocation error without a return code", profile)
-        self.assertIn("Authentication failed.", profile)
-        self.assertIn("Preserve the input\n`correlation_id` and `step_id` exactly.", profile)
-        for status in (
-            "completed",
-            "blocked",
-            "failed",
-            "ambiguous",
-            "needs_input",
-            "unsafe",
+    def test_publishes_the_same_runtime_sources(self) -> None:
+        for path in (
+            Path("server.py"),
+            Path("src") / "client.py",
+            Path("src") / "tools" / "checkout.py",
         ):
-            self.assertIn(f"`{status}`", profile)
-        self.assertIn(
-            "each entry must contain exactly\n`ref`, `kind`, and `local_path`",
-            profile,
-        )
-
-    def test_documents_schema_valid_successful_targeted_checkout_result(self) -> None:
-        result = self._profile_example("### Successful targeted checkout")
-        self.assertEqual(
-            result, self._load_fixture("checkout-success.work-result.json")
-        )
-
-        self._validate_work_result(result)
-        self._assert_exact_work_result_root(result)
-
-        self.assertEqual(result["status"], "completed")
-        self.assertTrue(result["output_artifacts"])
-        for artifact in result["output_artifacts"]:
-            self.assertSetEqual(set(artifact), {"ref", "kind", "local_path"})
-            self.assertTrue(artifact["ref"])
-            self.assertTrue(artifact["kind"])
-            self.assertTrue(artifact["local_path"])
-        self.assertEqual(
-            result["octoplant_checkout"]["local_checkout_ref"],
-            result["output_artifacts"][0]["ref"],
-        )
-        self.assertIsInstance(result["octoplant_checkout"]["resolved_identity"], dict)
-        self.assertNotIn("resolved_project_identity", result["octoplant_checkout"])
-        self.assertIn(
-            "octoplant_unchanged_release_completed",
-            {evidence["type"] for evidence in result["evidence"]},
-        )
-
-    def test_documents_schema_valid_completed_not_found_result(self) -> None:
-        result = self._profile_example("### Completed targeted checkout not found")
-        self.assertEqual(
-            result, self._load_fixture("checkout-not-found.work-result.json")
-        )
-
-        self._validate_work_result(result)
-        self._assert_exact_work_result_root(result)
-        self.assertEqual(result["status"], "completed")
-        self.assertEqual(result["output_artifacts"], [])
-        self.assertIsNone(result["octoplant_checkout"]["local_checkout_ref"])
-        self.assertNotIn(
-            "octoplant_unchanged_release_completed",
-            {evidence["type"] for evidence in result["evidence"]},
-        )
-
-    def test_requires_complete_work_result_fields(self) -> None:
-        schema = json.loads(
-            (self._root / "contracts" / "work-result.schema.json").read_text()
-        )
-
-        self.assertTrue(
-            {
-                "schema_version",
-                "correlation_id",
-                "step_id",
-                "status",
-                "output_artifacts",
-                "evidence",
-                "risks",
-            }.issubset(schema["required"])
-        )
-        self.assertEqual(schema["properties"]["evidence"]["minItems"], 1)
-        self.assertEqual(schema["properties"]["risks"]["minItems"], 1)
-        self.assertSetEqual(
-            set(schema["properties"]["status"]["enum"]),
-            {"completed", "blocked", "needs_input", "failed", "unsafe", "ambiguous"},
-        )
-        self.assertIn(
-            "captured_at", schema["$defs"]["evidence"]["required"]
-        )
-        self.assertSetEqual(
-            set(schema["$defs"]["artifact"]["required"]),
-            {"ref", "kind", "local_path"},
-        )
-        checkout = schema["$defs"]["octoplantCheckout"]["properties"]
-        self.assertEqual(checkout["resolved_identity"]["$ref"], "#/$defs/projectIdentity")
-        self.assertEqual(checkout["resolved_project_identity"]["type"], "string")
-
-        valid_result = self._load_fixture("checkout-success.work-result.json")
-        valid_result["octoplant_checkout"]["resolved_project_identity"] = (
-            "Dendermonde PLC 2"
-        )
-        self._validate_work_result(valid_result)
-
-        for forbidden_key in ("type", "result", "skipped"):
-            invalid_result = self._load_fixture("checkout-success.work-result.json")
-            invalid_result[forbidden_key] = "invalid-wrapper"
-            with self.assertRaises(ValidationError):
-                self._validate_work_result(invalid_result)
-
-        invalid_identity = self._load_fixture("checkout-success.work-result.json")
-        invalid_identity["octoplant_checkout"]["resolved_identity"] = (
-            "Dendermonde PLC 2"
-        )
-        with self.assertRaises(ValidationError):
-            self._validate_work_result(invalid_identity)
+            self.assertEqual(
+                (self._root / path).read_text(encoding="utf-8"),
+                (self._root / "publish" / path).read_text(encoding="utf-8"),
+                path,
+            )
 
     def test_keeps_all_release_version_metadata_in_sync(self) -> None:
         source_manifest = json.loads((self._root / "plugin.json").read_text())
         package_manifest = json.loads(
             (self._root / "publish" / "plugin.json").read_text()
         )
-        source_project = (self._root / "pyproject.toml").read_text()
-        package_project = (self._root / "publish" / "pyproject.toml").read_text()
-        source_skill = (self._root / "skills" / "Octoplant" / "SKILL.md").read_text()
+        source_project = (self._root / "pyproject.toml").read_text(encoding="utf-8")
+        package_project = (
+            self._root / "publish" / "pyproject.toml"
+        ).read_text(encoding="utf-8")
+        source_skill = (
+            self._root / "skills" / "Octoplant" / "SKILL.md"
+        ).read_text(encoding="utf-8")
         package_skill = (
             self._root / "publish" / "skills" / "Octoplant" / "SKILL.md"
-        ).read_text()
+        ).read_text(encoding="utf-8")
         version = source_manifest["version"]
 
+        self.assertEqual(version, "3.0.0")
         self.assertEqual(package_manifest["version"], version)
         self.assertIn(f'version = "{version}"', source_project)
         self.assertIn(f'version = "{version}"', package_project)
@@ -288,9 +133,21 @@ class PluginPackageTests(unittest.TestCase):
             f"**Release:** {version}",
             (self._root / "README.md").read_text(encoding="utf-8"),
         )
-        self.assertIn(
-            "checkout_copy_and_release_component",
-            source_skill,
+
+    def test_does_not_publish_the_retired_work_result_contract(self) -> None:
+        self.assertFalse(
+            (self._root / "contracts" / "work-result.schema.json").exists()
+        )
+        self.assertFalse(
+            (
+                self._root
+                / "publish"
+                / "contracts"
+                / "work-result.schema.json"
+            ).exists()
+        )
+        self.assertFalse(
+            any((self._root / self._fixtures_path).glob("*.work-result.json"))
         )
 
 
@@ -480,7 +337,10 @@ class WorkspaceResolutionTests(unittest.TestCase):
             )
 
         self.assertEqual(result["returncode"], 1)
-        self.assertEqual(result["status"], "Fout -- geen check-out mogelijk of minimaal een mislukt")
+        self.assertEqual(
+            result["status"],
+            "Fout -- geen check-out mogelijk of minimaal een mislukt",
+        )
         self.assertTrue(result["binary_output_suppressed"])
         self.assertEqual(result["stdout"], "")
         self.assertEqual(result["stderr"], "")
@@ -537,7 +397,11 @@ class WorkspaceResolutionTests(unittest.TestCase):
             release_result = subprocess.CompletedProcess(args=[], returncode=0)
             with patch(
                 "src.client.subprocess.run",
-                side_effect=[checkout_result, subprocess.CompletedProcess(args=[], returncode=0), release_result],
+                side_effect=[
+                    checkout_result,
+                    subprocess.CompletedProcess(args=[], returncode=0),
+                    release_result,
+                ],
             ) as run:
                 result = asyncio.run(
                     client.checkout_copy_and_release_component(

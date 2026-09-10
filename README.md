@@ -4,7 +4,7 @@ MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) veilige
 OctoPlant/versiondog-navigatie, gerichte checkout en gecontroleerde
 checkoutvrijgave biedt.
 
-**Release:** 2.3.3
+**Release:** 3.0.0
 
 > **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
 > bevestigde check-in zonder nieuwe versie. Maintenance mode en andere mutaties
@@ -90,6 +90,25 @@ gelogd of via MCP doorgegeven.
 
 Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `.mcp.json`;
 de server start automatisch wanneer de plugin is ingeschakeld.
+
+Stuur voor een lokale projectkopie één zichtbaar handoff-blok naar de
+Octoplant Specialist:
+
+```text
+⬇️✋ HANDOFF — OctoPlant
+Actie: project lokaal beschikbaar maken
+Installatie: {installatienaam}
+Kostenplaats: {kostenplaats}
+PLC: {PLC-naam of nummer}
+Workspace: C:\pad\naar\de\hoofdworkspace
+Bevestiging: ja
+```
+
+De specialist resolveert het doel intern en sluit af met één
+`↩️ RESULTAAT — <terminal state>`-bericht. De terminal states zijn:
+✅ COMPLETED, 🔎 NOT_FOUND, ❓ NEEDS_INPUT, ⚠️ BLOCKED, ❌ FAILED en 🛑 UNSAFE.
+Bij een geslaagde lokale projectkopie bevat het resultaat alleen een
+niet-sensitieve samenvatting en `Lokaal project: <pad>`.
 
 Bij problemen:
 1. Controleer dat Python 3.11+ voor de huidige gebruiker beschikbaar is; start Copilot opnieuw zodat de launcher de runtime opnieuw kan maken.
@@ -220,8 +239,9 @@ Uitgecheckte bestanden worden gespiegeld naar:
 De MCP-server start vanuit de plugininstallatiemap, maar gebruikt uitsluitend
 de initiële handoff-workspace als artifactroot. Wanneer maar een van
 installatienaam of kostenplaats beschikbaar is, gebruikt hij alleen die waarde
-als mapnaam. Een niet gevonden PLC-project geeft `status: not_found` terug;
-de plugin probeert nooit een bredere checkout als fallback.
+als mapnaam. Een niet gevonden PLC-project geeft via de specialist
+`↩️ RESULTAAT — 🔎 NOT_FOUND` terug; de plugin probeert nooit een bredere
+checkout als fallback.
 
 ---
 
