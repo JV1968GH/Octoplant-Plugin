@@ -4,6 +4,11 @@
   "title": "OT work result",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    { "not": { "required": ["type"] } },
+    { "not": { "required": ["result"] } },
+    { "not": { "required": ["skipped"] } }
+  ],
   "required": ["schema_version", "correlation_id", "step_id", "status", "output_artifacts", "evidence", "risks"],
   "properties": {
     "schema_version": { "const": "1.2" },
@@ -81,8 +86,15 @@
       "additionalProperties": false,
       "properties": {
         "checkout_executed": { "type": "boolean" },
-        "resolved_identity": { "$ref": "#/$defs/projectIdentity" },
-        "resolved_project_identity": { "type": "string", "minLength": 1 },
+        "resolved_identity": {
+          "$ref": "#/$defs/projectIdentity",
+          "description": "Canonical structured identity for an Octoplant checkout."
+        },
+        "resolved_project_identity": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional legacy textual identity; it does not replace resolved_identity."
+        },
         "component_path": { "type": "string", "minLength": 1 },
         "local_checkout_ref": { "type": ["string", "null"], "minLength": 1 },
         "source_version": { "type": ["string", "number", "null"] },

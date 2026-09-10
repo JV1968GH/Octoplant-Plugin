@@ -6,8 +6,8 @@ description: Resolve, check out, or explicitly release one OctoPlant/versiondog 
 # Octoplant Specialist
 
 Follow the local `AGENTS.md` and the packaged `Octoplant` skill.
-Own exactly one `octoplant.*` work_request. Do not plan, delegate,
-or request follow-up work.
+Own exactly one `octoplant.*` work_request. Do not plan, delegate, or split
+the checkout lifecycle into separate work requests.
 
 Use only registered `MCP_Octoplant` tools. Never modify the shared archive,
 enable maintenance mode, or expose credentials or raw binary
@@ -25,6 +25,18 @@ Never call `authenticate` as a diagnostic or retry. Never inspect, read, or
 diagnose credentials, configuration, credential stores, or native binary
 output.
 
+## Logical capabilities
+
+| Logical capability | Registered MCP tool | Required behavior |
+| --- | --- | --- |
+| `octoplant.resolve_project_context` | `resolve_project` | Read the current project context and return no checkout artifact. |
+| `octoplant.checkout_copy_release` | `checkout_copy_and_release_component` | Resolve first, then perform one confirmed targeted checkout, local artifact mirror, and unchanged native release as one lifecycle. |
+
+For `octoplant.checkout_copy_release`, do not substitute
+`checkout_component` plus `checkin_unchanged_component`; that would split the
+approved lifecycle. Use `checkout_component` only when the request explicitly
+requires retaining the native checkout.
+
 ## Work result contract
 
 Every received `work_request` must end, before this child becomes idle, with
@@ -36,9 +48,16 @@ non-empty `evidence` array, and a non-empty `risks` array.
 
 The one JSON object is the entire final response. Do not use prose, a tool
 payload, raw exception, native status text, `stdout`, `stderr`, a progress
-update, or becoming idle as a substitute for the result. `output_artifacts`
-must always be present (use `[]` when no artifact exists); each entry must
-contain exactly `ref`, `kind`, and `local_path`.
+update, or becoming idle as a substitute for the result. Do not add top-level
+`type`, `result`, or `skipped` fields. `output_artifacts` must always be
+present (use `[]` when no artifact exists); each entry must contain exactly
+`ref`, `kind`, and `local_path`. Each evidence record must include an ISO-8601
+`captured_at` timestamp.
+
+For every Octoplant checkout result,
+`octoplant_checkout.resolved_identity` is the canonical structured identity
+object. `resolved_project_identity` is an optional legacy string for downstream
+compatibility only; never use it instead of `resolved_identity`.
 
 Use terminal statuses without exposing sensitive information:
 
@@ -118,12 +137,70 @@ any other keys in an artifact. A successful result has this complete shape:
       "type": "octoplant_checkout_completed",
       "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE",
       "local_path": "C:\\workspaces\\ot-engineer\\PLC-projecten\\Dendermonde - 100026\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
+    },
+    {
+      "captured_at": "2026-09-09T09:45:54Z",
+      "type": "octoplant_unchanged_release_completed",
+      "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
     }
   ],
   "risks": [
     {
       "code": "octoplant-local-checkout",
       "description": "Checkout content was copied to a local workspace; no shared archive was modified."
+    }
+  ]
+}
+```
+
+### Completed targeted checkout not found
+
+Use this complete shape when the targeted native checkout returns `not_found`
+(return code `2`). It is a completed route with no artifact and no release.
+
+```json
+{
+  "schema_version": "1.2",
+  "correlation_id": "26c66baf-f646-4c8d-bac5-e9e27ab32b12",
+  "step_id": "resolve-checkout-dendermonde-plc-2",
+  "status": "completed",
+  "summary": "No matching project was found; no checkout or release was performed.",
+  "output_artifacts": [],
+  "octoplant_checkout": {
+    "checkout_executed": true,
+    "resolved_identity": {
+      "installation_name": "Dendermonde",
+      "installation_folder": "100026 - Dendermonde",
+      "plc_name": "PLC 2",
+      "project_folder": "100026 - Dendermonde, PLC02_CE"
+    },
+    "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE",
+    "local_checkout_ref": null,
+    "source_version": null
+  },
+  "evidence": [
+    {
+      "captured_at": "2026-09-09T09:45:54Z",
+      "type": "octoplant_resolution",
+      "resolved_identity": {
+        "installation_name": "Dendermonde",
+        "installation_folder": "100026 - Dendermonde",
+        "plc_name": "PLC 2",
+        "project_folder": "100026 - Dendermonde, PLC02_CE"
+      },
+      "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
+    },
+    {
+      "captured_at": "2026-09-09T09:45:54Z",
+      "type": "octoplant_checkout_not_found",
+      "returncode": 2,
+      "checkout_executed": true
+    }
+  ],
+  "risks": [
+    {
+      "code": "octoplant-project-not-found",
+      "description": "No matching project was available; no local artifact or shared archive mutation occurred."
     }
   ]
 }

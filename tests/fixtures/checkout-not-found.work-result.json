@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.2",
+  "correlation_id": "26c66baf-f646-4c8d-bac5-e9e27ab32b12",
+  "step_id": "resolve-checkout-dendermonde-plc-2",
+  "status": "completed",
+  "summary": "No matching project was found; no checkout or release was performed.",
+  "output_artifacts": [],
+  "octoplant_checkout": {
+    "checkout_executed": true,
+    "resolved_identity": {
+      "installation_name": "Dendermonde",
+      "installation_folder": "100026 - Dendermonde",
+      "plc_name": "PLC 2",
+      "project_folder": "100026 - Dendermonde, PLC02_CE"
+    },
+    "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE",
+    "local_checkout_ref": null,
+    "source_version": null
+  },
+  "evidence": [
+    {
+      "captured_at": "2026-09-09T09:45:54Z",
+      "type": "octoplant_resolution",
+      "resolved_identity": {
+        "installation_name": "Dendermonde",
+        "installation_folder": "100026 - Dendermonde",
+        "plc_name": "PLC 2",
+        "project_folder": "100026 - Dendermonde, PLC02_CE"
+      },
+      "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
+    },
+    {
+      "captured_at": "2026-09-09T09:45:54Z",
+      "type": "octoplant_checkout_not_found",
+      "returncode": 2,
+      "checkout_executed": true
+    }
+  ],
+  "risks": [
+    {
+      "code": "octoplant-project-not-found",
+      "description": "No matching project was available; no local artifact or shared archive mutation occurred."
+    }
+  ]
+}

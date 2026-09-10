@@ -40,6 +40,11 @@
       "type": "octoplant_checkout_completed",
       "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE",
       "local_path": "C:\\workspaces\\ot-engineer\\PLC-projecten\\Dendermonde - 100026\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
+    },
+    {
+      "captured_at": "2026-09-09T09:45:54Z",
+      "type": "octoplant_unchanged_release_completed",
+      "component_path": "\\RWZI's\\100026 - Dendermonde\\100026 - Dendermonde, PLC02_CE"
     }
   ],
   "risks": [
