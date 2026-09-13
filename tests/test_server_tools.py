@@ -15,7 +15,9 @@ from src.client import OctoplantClient, OctoplantConfigError
 
 class PluginPackageTests(unittest.TestCase):
     _root = Path(__file__).resolve().parents[1]
-    _profile_path = Path("agents") / "octoplant-specialist.agent.md"
+    _profile_path = (
+        Path("com.github.copilot") / "agents" / "octoplant-specialist.agent.md"
+    )
     _fixtures_path = Path("tests") / "fixtures"
     _terminal_states = (
         "✅ COMPLETED",
@@ -31,14 +33,30 @@ class PluginPackageTests(unittest.TestCase):
             encoding="utf-8"
         ).strip()
 
-    def test_registers_the_specialist_agent_in_source_and_package(self) -> None:
-        source_manifest = json.loads((self._root / "plugin.json").read_text())
-        package_manifest = json.loads(
-            (self._root / "publish" / "plugin.json").read_text()
-        )
+    def test_uses_the_agent_plugins_1_0_package_layout(self) -> None:
+        plugin_schema = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+        mcp_schema = "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json"
+        legacy_fields = {"skills", "agents", "mcpServers", "category", "tags"}
 
-        self.assertEqual(source_manifest["agents"], ["agents/"])
-        self.assertEqual(package_manifest["agents"], ["agents/"])
+        for package_root in (self._root, self._root / "publish"):
+            manifest = json.loads((package_root / "plugin.json").read_text())
+            registration = json.loads((package_root / "mcp.json").read_text())
+
+            self.assertEqual(manifest["$schema"], plugin_schema)
+            self.assertFalse(legacy_fields & manifest.keys())
+            self.assertEqual(registration["$schema"], mcp_schema)
+            self.assertEqual(
+                registration["mcpServers"]["MCP_Octoplant"]["args"],
+                ["/c", "${PLUGIN_ROOT}\\scripts\\start-mcp.cmd"],
+            )
+            self.assertEqual(
+                registration["mcpServers"]["MCP_Octoplant"]["cwd"],
+                "${PLUGIN_ROOT}",
+            )
+            self.assertTrue((package_root / self._profile_path).is_file())
+
+        self.assertFalse((self._root / ".mcp.json").exists())
+        self.assertFalse((self._root / "agents").exists())
 
     def test_publishes_the_same_shared_handoff_profile(self) -> None:
         source_profile = (self._root / self._profile_path).read_text(encoding="utf-8")
@@ -123,7 +141,7 @@ class PluginPackageTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         version = source_manifest["version"]
 
-        self.assertEqual(version, "3.0.0")
+        self.assertEqual(version, "4.0.0")
         self.assertEqual(package_manifest["version"], version)
         self.assertIn(f'version = "{version}"', source_project)
         self.assertIn(f'version = "{version}"', package_project)

@@ -4,7 +4,7 @@ MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) veilige
 OctoPlant/versiondog-navigatie, gerichte checkout en gecontroleerde
 checkoutvrijgave biedt.
 
-**Release:** 3.0.0
+**Release:** 4.0.0
 
 > **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
 > check-in zonder nieuwe versie. Maintenance mode en andere mutaties
@@ -38,10 +38,9 @@ hij de gedeclareerde Python-dependencies. Hiervoor moet Python 3.11 of hoger
 via `py -3` of `python` beschikbaar zijn. De voortgang en bruikbare fouten gaan
 naar stderr, voordat de MCP-stdio-verbinding start.
 
-De MCP-registratie gebruikt een expliciete `timeout` van `600000` milliseconden
-(tien minuten). Dat geeft een eerste installatie op een beheerd netwerk genoeg
-tijd om de venv en dependencies klaar te zetten voordat Copilot de tools
-opvraagt; normale starts gebruiken dezelfde registratie zonder extra wachttijd.
+De Agent Plugins 1.0 MCP-registratie in `mcp.json` start de launcher vanuit
+`${PLUGIN_ROOT}`. Daardoor blijven de launcher- en runtimepaden portable,
+terwijl de installatiemap read-only kan blijven.
 
 De installatiemap mag read-only zijn: de launcher en het script schrijven
 uitsluitend naar de gebruiker-lokale runtime. Een .NET SDK is niet nodig op een clienttoestel; de
@@ -88,7 +87,7 @@ gelogd of via MCP doorgegeven.
 
 ### Gebruiken in Copilot Desktop
 
-Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `.mcp.json`;
+Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `mcp.json`;
 de server start automatisch wanneer de plugin is ingeschakeld.
 
 Stuur voor een lokale projectkopie één zichtbaar handoff-blok naar de
@@ -283,9 +282,12 @@ Octoplant-Plugin/
 ├── PLC-projecten/               # Lokale mirror van uitgecheckte componenten, per installatie
 ├── assets/
 │   └── Octoplant.png
-└── .mcp.json                    # MCP-serverregistratie
+├── mcp.json                     # Agent Plugins 1.0 MCP-serverregistratie
+└── com.github.copilot/
+    └── agents/
+        └── octoplant-specialist.agent.md
 ```
 
-De registratie gebruikt `${PLUGIN_ROOT}\scripts\start-mcp.cmd` met een
-stdio-timeout van tien minuten; er zijn geen gebruikersspecifieke absolute
+De registratie gebruikt `${PLUGIN_ROOT}\scripts\start-mcp.cmd` en
+`${PLUGIN_ROOT}` als werkmap; er zijn geen gebruikersspecifieke absolute
 paden in het pluginpakket.

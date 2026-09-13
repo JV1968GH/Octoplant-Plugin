@@ -1,6 +1,7 @@
 ﻿### Windows
 # Windows thumbnail cache files
 Thumbs.db
+.DS_Store
 
 # Folder config file
 [Dd]esktop.ini

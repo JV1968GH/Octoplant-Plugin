@@ -21,7 +21,8 @@ uitsluitend gecontroleerde vrijgave van een onveranderde checkout.
 - `binaryTools/` = lokale helper binaries en source
 - `PLC-projecten/` = lokale outputmap voor uitgecheckte componenten, per installatie
 - `skills/` = skilldefinities en referenties
-- `.mcp.json` = MCP-registratie voor de plugin
+- `mcp.json` = Agent Plugins 1.0 MCP-registratie voor de plugin
+- `com.github.copilot/agents/` = Copilot-specifieke custom agents
 
 ## Scope en veiligheidsregels
 
