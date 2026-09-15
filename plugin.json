@@ -1,7 +1,7 @@
 {
   "name": "octoplant",
   "description": "Eenvoudige OctoPlant/versiondog-handoff voor veilige lokale projectkopie",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "author": {
     "name": "Jan Verrept",
     "email": "admin@octoplant.local"

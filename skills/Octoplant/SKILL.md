@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 3.0.0
+version: 3.0.1
 description: "Eenvoudige OctoPlant/versiondog-handoff voor een veilige lokale projectkopie zonder versiecreatie."
 ---
 
