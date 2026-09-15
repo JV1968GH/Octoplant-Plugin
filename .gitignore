@@ -36,3 +36,4 @@ __pycache__/
 # .NET build-artefacten
 binaryTools/*/bin/
 binaryTools/*/obj/
+.DS_Store
