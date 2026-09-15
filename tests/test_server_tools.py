@@ -19,9 +19,7 @@ class PluginPackageTests(unittest.TestCase):
     _fixtures_path = Path("tests") / "fixtures"
     _terminal_states = (
         "✅ COMPLETED",
-        "🔎 NOT_FOUND",
         "❓ NEEDS_INPUT",
-        "⚠️ BLOCKED",
         "❌ FAILED",
         "🛑 UNSAFE",
     )
@@ -101,11 +99,9 @@ class PluginPackageTests(unittest.TestCase):
             self.assertIn(state, skill)
 
         completed_result = self._load_fixture("octoplant-completed-result.txt")
-        self.assertTrue(completed_result.startswith("↩️ RESULTAAT — ✅ COMPLETED"))
+        self.assertTrue(completed_result.startswith("↩️✅ COMPLETED van Octoplant"))
         self.assertIn("Lokaal project:", completed_result)
         for forbidden in (
-            "{",
-            "}",
             "component_path",
             "correlation_id",
             "evidence",
@@ -113,6 +109,7 @@ class PluginPackageTests(unittest.TestCase):
             "work_result",
         ):
             self.assertNotIn(forbidden, completed_result)
+        json.loads(completed_result.splitlines()[-1])
 
     def test_publishes_the_same_shared_interface_docs(self) -> None:
         for path in (
@@ -157,7 +154,7 @@ class PluginPackageTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         version = source_manifest["version"]
 
-        self.assertEqual(version, "3.0.2")
+        self.assertEqual(version, "3.0.3")
         self.assertEqual(package_manifest["version"], version)
         self.assertIn(f'version = "{version}"', source_project)
         self.assertIn(f'version = "{version}"', package_project)

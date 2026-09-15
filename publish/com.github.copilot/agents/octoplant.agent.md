@@ -21,12 +21,14 @@ required; include the PLC when it is known. A project checkout also requires
 an absolute workspace.
 
 ```text
-⬇️✋ HANDOFF — Octoplant
+⬇️✋ HANDOFF naar Octoplant
 Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
 PLC: {PLC-naam of nummer}
 Workspace: C:\pad\naar\de\hoofdworkspace
+Extra guardrails: {optioneel}
+Verwachte resultaten: {optioneel}
 ```
 
 For every project checkout, resolve one component and then use
@@ -41,16 +43,18 @@ output.
 
 ## Final result
 
-Finish with one concise, visible message. Do not include JSON, tool payloads,
-capabilities, identifiers, evidence, risks, internal fields, raw errors, or
-binary output. Use only these terminal states:
+Log the complete received handoff unchanged in this delegate session. Finish
+with one concise, visible message in the online JVAI format. Its first line is
+\`↩️<terminal state> van Octoplant\`, followed by a short human-readable summary
+and one machine-readable JSON payload. The payload may contain only the safe
+requested result and local artifact paths; never include credentials,
+configuration, archive details, raw errors, or binary output. Use only these
+JVAI terminal states:
 
 | State | Use when |
 | --- | --- |
 | ✅ COMPLETED | The requested project was copied locally and the unchanged native checkout was released without creating a version. |
-| 🔎 NOT_FOUND | No matching project was found. |
 | ❓ NEEDS_INPUT | Required handoff details or an unambiguous target are missing. |
-| ⚠️ BLOCKED | Local configuration prevents the action. |
 | ❌ FAILED | The requested action could not be completed. |
 | 🛑 UNSAFE | The handoff requests a broad checkout, shared-archive change, version creation, maintenance mode, or another forbidden action. |
 
@@ -58,7 +62,8 @@ For a successful project checkout, report only a non-sensitive summary and the
 local project path:
 
 ```text
-↩️ RESULTAAT — ✅ COMPLETED
+↩️✅ COMPLETED van Octoplant
 Het gevraagde project is lokaal beschikbaar.
 Lokaal project: C:\werkruimte\PLC-projecten\Voorbeeld - 100026\PLC-project
+{"delegate":"Octoplant","terminal_state":"COMPLETED","result":{"local_project_path":"C:\\work\\PLC-projecten\\Voorbeeld - 100026\\PLC-project"}}
 ```

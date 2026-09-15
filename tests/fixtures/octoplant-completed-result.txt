@@ -1,3 +1,4 @@
-↩️ RESULTAAT — ✅ COMPLETED
+↩️✅ COMPLETED van Octoplant
 Het gevraagde project is lokaal beschikbaar.
 Lokaal project: C:\werkruimte\PLC-projecten\Voorbeeld - 100026\PLC-project
+{"delegate":"Octoplant","terminal_state":"COMPLETED","result":{"local_project_path":"C:\\work\\PLC-projecten\\Voorbeeld - 100026\\PLC-project"}}

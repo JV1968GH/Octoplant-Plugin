@@ -4,7 +4,7 @@ MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) veilige
 OctoPlant/versiondog-navigatie, gerichte checkout en gecontroleerde
 checkoutvrijgave biedt.
 
-**Release:** 3.0.2
+**Release:** 3.0.3
 
 > **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
 > check-in zonder nieuwe versie. Maintenance mode en andere mutaties
@@ -95,18 +95,20 @@ Stuur voor een lokale projectkopie één zichtbaar handoff-blok naar de
 Octoplant:
 
 ```text
-⬇️✋ HANDOFF — Octoplant
+⬇️✋ HANDOFF naar Octoplant
 Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
 PLC: {PLC-naam of nummer}
 Workspace: C:\pad\naar\de\hoofdworkspace
-Bevestiging: ja
+Extra guardrails: {optioneel}
+Verwachte resultaten: {optioneel}
 ```
 
-Octoplant resolveert het doel intern en sluit af met één
-`↩️ RESULTAAT — <terminal state>`-bericht. De terminal states zijn:
-✅ COMPLETED, 🔎 NOT_FOUND, ❓ NEEDS_INPUT, ⚠️ BLOCKED, ❌ FAILED en 🛑 UNSAFE.
+Octoplant resolveert het doel intern, logt de ontvangen handoff in zijn
+delegate-sessie en sluit af met één JVAI-bericht, een korte samenvatting en
+veilige JSON-payload. De terminal states zijn:
+✅ COMPLETED, ❓ NEEDS_INPUT, ❌ FAILED en 🛑 UNSAFE.
 Bij een geslaagde lokale projectkopie bevat het resultaat alleen een
 niet-sensitieve samenvatting en `Lokaal project: <pad>`.
 

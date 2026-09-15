@@ -1,6 +1,8 @@
-⬇️✋ HANDOFF — Octoplant
+⬇️✋ HANDOFF naar Octoplant
 Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
 PLC: {PLC-naam of nummer}
 Workspace: C:\pad\naar\de\hoofdworkspace
+Extra guardrails: {optioneel}
+Verwachte resultaten: {optioneel}

@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 3.0.2
+version: 3.0.3
 description: "Eenvoudige OctoPlant/versiondog-handoff voor een veilige lokale projectkopie zonder versiecreatie."
 ---
 
@@ -27,12 +27,14 @@ toe als het bekend is. Een lokale projectkopie vereist bovendien een absolute
 workspace.
 
 ```text
-⬇️✋ HANDOFF — Octoplant
+⬇️✋ HANDOFF naar Octoplant
 Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
 PLC: {PLC-naam of nummer}
 Workspace: C:\pad\naar\de\hoofdworkspace
+Extra guardrails: {optioneel}
+Verwachte resultaten: {optioneel}
 ```
 
 Octoplant resolveert altijd eerst de actuele serverarchive en behandelt
@@ -42,25 +44,25 @@ downstream APG- of Control Expert-stappen.
 
 ## Resultaat
 
-Octoplant sluit af met één zichtbaar, beknopt bericht:
+Octoplant logt de volledige ontvangen handoff ongewijzigd in zijn eigen
+delegate-sessie en sluit af met één zichtbaar, beknopt JVAI-bericht:
 
-`↩️ RESULTAAT — <terminal state>`
+`↩️<terminal state> van Octoplant`
 
 Gebruik uitsluitend:
 
 | State | Betekenis |
 | --- | --- |
 | ✅ COMPLETED | Lokale projectkopie is beschikbaar en de onveranderde native checkout is versieloos vrijgegeven. |
-| 🔎 NOT_FOUND | Geen overeenkomstig project gevonden. |
 | ❓ NEEDS_INPUT | Details of een eenduidig doel ontbreken. |
-| ⚠️ BLOCKED | Lokale configuratie blokkeert de actie. |
 | ❌ FAILED | De actie kon niet worden voltooid. |
 | 🛑 UNSAFE | De handoff vraagt een verboden actie. |
 
 Bij ✅ COMPLETED bevat het bericht uitsluitend een niet-sensitieve samenvatting
-en `Lokaal project: <pad>`. Andere uitkomsten bevatten alleen een korte,
-niet-sensitieve toelichting. Geef nooit JSON, toolpayloads, credentials,
-configuratiegegevens, archiefdetails, binaire uitvoer of interne
+en `Lokaal project: <pad>`, gevolgd door één JSON-payload met uitsluitend die
+veilige resultaten. Andere uitkomsten bevatten eveneens een korte,
+niet-sensitieve toelichting en een minimale JSON-payload. Geef nooit
+credentials, configuratiegegevens, archiefdetails, binaire uitvoer of interne
 lifecyclegegevens weer.
 
 ## Referenties
