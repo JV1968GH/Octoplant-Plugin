@@ -27,9 +27,9 @@ fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.
 
 ## Gedeelde handoff en resultaat
 
-Geef de specialist een zichtbaar `⬇️✋ HANDOFF — OctoPlant`-blok met de actie,
+Geef Octoplant een zichtbaar `⬇️✋ HANDOFF — Octoplant`-blok met de actie,
 installatie of kostenplaats, het PLC indien bekend en een absolute workspace
-voor een lokale projectkopie. De specialist resolveert de
+voor een lokale projectkopie. Octoplant resolveert de
 component zelf en voert checkout, lokale mirror en versieloze vrijgave als één
 veilige flow uit.
 

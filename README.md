@@ -92,10 +92,10 @@ Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `.mcp.
 de server start automatisch wanneer de plugin is ingeschakeld.
 
 Stuur voor een lokale projectkopie één zichtbaar handoff-blok naar de
-Octoplant Specialist:
+Octoplant:
 
 ```text
-⬇️✋ HANDOFF — OctoPlant
+⬇️✋ HANDOFF — Octoplant
 Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
@@ -104,7 +104,7 @@ Workspace: C:\pad\naar\de\hoofdworkspace
 Bevestiging: ja
 ```
 
-De specialist resolveert het doel intern en sluit af met één
+Octoplant resolveert het doel intern en sluit af met één
 `↩️ RESULTAAT — <terminal state>`-bericht. De terminal states zijn:
 ✅ COMPLETED, 🔎 NOT_FOUND, ❓ NEEDS_INPUT, ⚠️ BLOCKED, ❌ FAILED en 🛑 UNSAFE.
 Bij een geslaagde lokale projectkopie bevat het resultaat alleen een
@@ -235,7 +235,7 @@ Uitgecheckte bestanden worden gespiegeld naar:
 De MCP-server start vanuit de plugininstallatiemap, maar gebruikt uitsluitend
 de initiële handoff-workspace als artifactroot. Wanneer maar een van
 installatienaam of kostenplaats beschikbaar is, gebruikt hij alleen die waarde
-als mapnaam. Een niet gevonden PLC-project geeft via de specialist
+als mapnaam. Een niet gevonden PLC-project geeft via Octoplant
 `↩️ RESULTAAT — 🔎 NOT_FOUND` terug; de plugin probeert nooit een bredere
 checkout als fallback.
 

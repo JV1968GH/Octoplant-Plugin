@@ -21,13 +21,13 @@ lokale clientarchive en de door de handoff aangewezen initiële promptworkspace.
 
 ## Gedeelde handoff
 
-Een gebruiker of orchestrator geeft één zichtbaar blok aan de Octoplant
-Specialist. Een installatie of kostenplaats is vereist; voeg het PLC-nummer
+Een gebruiker of orchestrator geeft één zichtbaar blok aan Octoplant.
+Een installatie of kostenplaats is vereist; voeg het PLC-nummer
 toe als het bekend is. Een lokale projectkopie vereist bovendien een absolute
 workspace.
 
 ```text
-⬇️✋ HANDOFF — OctoPlant
+⬇️✋ HANDOFF — Octoplant
 Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
@@ -35,14 +35,14 @@ PLC: {PLC-naam of nummer}
 Workspace: C:\pad\naar\de\hoofdworkspace
 ```
 
-De specialist resolveert altijd eerst de actuele serverarchive en behandelt
+Octoplant resolveert altijd eerst de actuele serverarchive en behandelt
 daarna precies één component. Hij gebruikt voor een lokale kopie de
 gecombineerde checkout-, mirror- en versieloze-vrijgaveflow. Er zijn geen
 downstream APG- of Control Expert-stappen.
 
 ## Resultaat
 
-De specialist sluit af met één zichtbaar, beknopt bericht:
+Octoplant sluit af met één zichtbaar, beknopt bericht:
 
 `↩️ RESULTAAT — <terminal state>`
 

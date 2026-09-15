@@ -15,7 +15,7 @@ from src.client import OctoplantClient, OctoplantConfigError
 
 class PluginPackageTests(unittest.TestCase):
     _root = Path(__file__).resolve().parents[1]
-    _profile_path = Path("agents") / "octoplant-specialist.agent.md"
+    _profile_path = Path("agents") / "octoplant.agent.md"
     _fixtures_path = Path("tests") / "fixtures"
     _terminal_states = (
         "✅ COMPLETED",
@@ -31,7 +31,7 @@ class PluginPackageTests(unittest.TestCase):
             encoding="utf-8"
         ).strip()
 
-    def test_registers_the_specialist_agent_in_source_and_package(self) -> None:
+    def test_registers_the_octoplant_agent_in_source_and_package(self) -> None:
         source_manifest = json.loads((self._root / "plugin.json").read_text())
         package_manifest = json.loads(
             (self._root / "publish" / "plugin.json").read_text()
@@ -47,7 +47,7 @@ class PluginPackageTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertEqual(source_profile, package_profile)
-        self.assertIn("name: octoplant-specialist", source_profile)
+        self.assertIn("name: Octoplant", source_profile)
         self.assertIn(self._load_fixture("octoplant-handoff.txt"), source_profile)
         self.assertIn(self._load_fixture("octoplant-completed-result.txt"), source_profile)
         self.assertIn("checkout_copy_and_release_component", source_profile)
@@ -55,6 +55,34 @@ class PluginPackageTests(unittest.TestCase):
         self.assertIn("WithoutComparison=Y", source_profile)
         self.assertIn("ReleaseAfterCheckIn=Y", source_profile)
         self.assertIn("Do not delegate to APG, Control Expert", source_profile)
+
+    def test_uses_octoplant_as_the_only_agent_and_handoff_name(self) -> None:
+        retired_agent_name = "octoplant" + "-specialist"
+        retired_visible_name = "Octoplant" + " Specialist"
+        retired_handoff_name = "HANDOFF — Octo" + "Plant"
+        contract_files = (
+            path
+            for path in self._root.rglob("*")
+            if path.is_file()
+            and path.suffix in {".agent.md", ".md", ".py", ".txt"}
+        )
+
+        self.assertFalse(
+            (self._root / "agents" / f"{retired_agent_name}.agent.md").exists()
+        )
+        self.assertFalse(
+            (
+                self._root
+                / "publish"
+                / "agents"
+                / f"{retired_agent_name}.agent.md"
+            ).exists()
+        )
+        for path in contract_files:
+            content = path.read_text(encoding="utf-8-sig")
+            self.assertNotIn(retired_visible_name, content, path)
+            self.assertNotIn(retired_agent_name, content.lower(), path)
+            self.assertNotIn(retired_handoff_name, content, path)
 
     def test_documents_only_the_approved_terminal_states(self) -> None:
         profile = (self._root / self._profile_path).read_text(encoding="utf-8")
