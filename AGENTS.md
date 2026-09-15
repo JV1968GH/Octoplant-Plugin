@@ -21,7 +21,7 @@ uitsluitend gecontroleerde vrijgave van een onveranderde checkout.
 - `binaryTools/` = lokale helper binaries en source
 - `PLC-projecten/` = lokale outputmap voor uitgecheckte componenten, per installatie
 - `skills/` = skilldefinities en referenties
-- `.mcp.json` = MCP-registratie voor de plugin
+- `mcp.json` = MCP-registratie voor de plugin
 
 ## Scope en veiligheidsregels
 

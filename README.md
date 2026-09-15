@@ -4,7 +4,7 @@ MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) veilige
 OctoPlant/versiondog-navigatie, gerichte checkout en gecontroleerde
 checkoutvrijgave biedt.
 
-**Release:** 3.0.1
+**Release:** 3.0.2
 
 > **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
 > check-in zonder nieuwe versie. Maintenance mode en andere mutaties
@@ -88,7 +88,7 @@ gelogd of via MCP doorgegeven.
 
 ### Gebruiken in Copilot Desktop
 
-Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `.mcp.json`;
+Open een nieuwe Copilot-chat. De plugin registreert **MCP_Octoplant** via `mcp.json`;
 de server start automatisch wanneer de plugin is ingeschakeld.
 
 Stuur voor een lokale projectkopie één zichtbaar handoff-blok naar de
@@ -283,7 +283,7 @@ Octoplant-Plugin/
 ├── PLC-projecten/               # Lokale mirror van uitgecheckte componenten, per installatie
 ├── assets/
 │   └── Octoplant.png
-└── .mcp.json                    # MCP-serverregistratie
+└── mcp.json                     # MCP-serverregistratie
 ```
 
 De registratie gebruikt `${PLUGIN_ROOT}\scripts\start-mcp.cmd` met een

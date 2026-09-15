@@ -15,7 +15,7 @@ from src.client import OctoplantClient, OctoplantConfigError
 
 class PluginPackageTests(unittest.TestCase):
     _root = Path(__file__).resolve().parents[1]
-    _profile_path = Path("agents") / "octoplant.agent.md"
+    _profile_path = Path("com.github.copilot") / "agents" / "octoplant.agent.md"
     _fixtures_path = Path("tests") / "fixtures"
     _terminal_states = (
         "✅ COMPLETED",
@@ -37,8 +37,13 @@ class PluginPackageTests(unittest.TestCase):
             (self._root / "publish" / "plugin.json").read_text()
         )
 
-        self.assertEqual(source_manifest["agents"], ["agents/"])
-        self.assertEqual(package_manifest["agents"], ["agents/"])
+        self.assertEqual(
+            source_manifest["$schema"],
+            "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+        )
+        self.assertEqual(package_manifest["$schema"], source_manifest["$schema"])
+        self.assertNotIn("agents", source_manifest)
+        self.assertNotIn("agents", package_manifest)
 
     def test_publishes_the_same_shared_handoff_profile(self) -> None:
         source_profile = (self._root / self._profile_path).read_text(encoding="utf-8")
@@ -68,12 +73,13 @@ class PluginPackageTests(unittest.TestCase):
         )
 
         self.assertFalse(
-            (self._root / "agents" / f"{retired_agent_name}.agent.md").exists()
+            (self._root / "com.github.copilot" / "agents" / f"{retired_agent_name}.agent.md").exists()
         )
         self.assertFalse(
             (
                 self._root
                 / "publish"
+                / "com.github.copilot"
                 / "agents"
                 / f"{retired_agent_name}.agent.md"
             ).exists()
@@ -151,7 +157,7 @@ class PluginPackageTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         version = source_manifest["version"]
 
-        self.assertEqual(version, "3.0.1")
+        self.assertEqual(version, "3.0.2")
         self.assertEqual(package_manifest["version"], version)
         self.assertIn(f'version = "{version}"', source_project)
         self.assertIn(f'version = "{version}"', package_project)

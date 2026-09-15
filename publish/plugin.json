@@ -1,7 +1,8 @@
 {
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "octoplant",
   "description": "Eenvoudige OctoPlant/versiondog-handoff voor veilige lokale projectkopie",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "author": {
     "name": "Jan Verrept",
     "email": "admin@octoplant.local"
@@ -13,12 +14,5 @@
     "checkout",
     "mcp"
   ],
-  "skills": [
-    "skills/"
-  ],
-  "agents": [
-    "agents/"
-  ],
-  "mcpServers": ".mcp.json",
   "icon": "assets/Octoplant.png"
 }
