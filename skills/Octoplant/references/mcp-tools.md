@@ -12,9 +12,9 @@
 versiondog-GUI en voert geen checkout uit. `VDogAutoCheckOut.exe` is de
 native checkoutclient die uitsluitend via de wrapper wordt aangeroepen.
 
-Bij gebruik via de Octoplant Specialist geeft de gebruiker geen toolparameters
-door. De zichtbare `⬇️✋ HANDOFF — OctoPlant` bevat de gevraagde actie en
-projectcontext; de specialist handelt de resolutie en veilige flow intern af
+Bij gebruik via Octoplant geeft de gebruiker geen toolparameters
+door. De zichtbare `⬇️✋ HANDOFF — Octoplant` bevat de gevraagde actie en
+projectcontext; Octoplant handelt de resolutie en veilige flow intern af
 en sluit af met `↩️ RESULTAAT — <terminal state>`.
 
 ## Verboden: checkout-all

@@ -25,6 +25,6 @@ Gebruik geen vaste naamgevingsconventie als vervanging voor deze scan: de
 archive is de bron van waarheid voor ontbrekende namen, omgekeerde
 kostenplaatsen en typefouten.
 
-De specialist gebruikt de geresolveerde paden uitsluitend intern. Een gebruiker
-of orchestrator geeft alleen de zichtbare `⬇️✋ HANDOFF — OctoPlant`; de
-specialist geeft geen component- of archiefpad weer in het eindresultaat.
+Octoplant gebruikt de geresolveerde paden uitsluitend intern. Een gebruiker
+of orchestrator geeft alleen de zichtbare `⬇️✋ HANDOFF — Octoplant`;
+Octoplant geeft geen component- of archiefpad weer in het eindresultaat.

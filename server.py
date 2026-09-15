@@ -40,8 +40,8 @@ mcp = FastMCP(
     instructions=(
         "MCP server voor OctoPlant/versiondog. "
         "Biedt navigatie, gerichte checkout en gecontroleerde checkoutvrijgave. "
-        "De Octoplant Specialist verwerkt een zichtbare "
-        "'⬇️✋ HANDOFF — OctoPlant' en sluit af met één "
+        "Octoplant verwerkt een zichtbare "
+        "'⬇️✋ HANDOFF — Octoplant' en sluit af met één "
         "'↩️ RESULTAAT — <terminal state>' bericht. "
         "Een check-in maakt nooit een versie. "
         "Maintenance mode en andere mutaties zijn niet beschikbaar."
