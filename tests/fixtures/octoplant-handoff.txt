@@ -3,6 +3,7 @@ Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
 PLC: {PLC-naam of nummer}
-Workspace: C:\pad\naar\de\hoofdworkspace
+Workspace: C:\pad\naar\de\hoofdworkspace (optioneel bij Destination folder)
+Destination folder: C:\pad\naar\de\directe\installatiemap (optioneel)
 Extra guardrails: {optioneel}
 Verwachte resultaten: {optioneel}

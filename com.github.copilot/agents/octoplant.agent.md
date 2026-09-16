@@ -17,8 +17,8 @@ returned `component_path` for the checkout.
 ## Shared interface
 
 Act only on this visible format. The installation name or cost center is
-required; include the PLC when it is known. A project checkout also requires
-an absolute workspace.
+required; include the PLC when it is known. A project checkout uses either an
+absolute workspace or an explicit absolute destination folder.
 
 ```text
 ⬇️✋ HANDOFF naar Octoplant
@@ -26,7 +26,8 @@ Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
 PLC: {PLC-naam of nummer}
-Workspace: C:\pad\naar\de\hoofdworkspace
+Workspace: C:\pad\naar\de\hoofdworkspace (optioneel bij Destination folder)
+Destination folder: C:\pad\naar\de\directe\installatiemap (optioneel)
 Extra guardrails: {optioneel}
 Verwachte resultaten: {optioneel}
 ```
@@ -38,6 +39,13 @@ file from a leaf directory; use `full_component=true` only when the complete
 component structure is needed. Use `checkout_component` only when the
 handoff explicitly asks to retain the native checkout. Never enable version
 creation: `Enabled=N`, `WithoutComparison=Y`, and `ReleaseAfterCheckIn=Y` are mandatory.
+
+When `Destination folder` is present, pass it as `destination_folder` and use
+it directly. It must already exist. Do not derive or append `PLC-projecten`,
+an installation name, a component path, or any other child directory. For the
+default `.stu` flow, verify before native release that exactly one `.stu` file
+exists directly in that folder, then return that file path only. Without
+`Destination folder`, preserve the legacy workspace-derived routing.
 
 Never call `authenticate` as a diagnostic or retry. Never inspect, read, or
 diagnose credentials, configuration, credential stores, or native binary

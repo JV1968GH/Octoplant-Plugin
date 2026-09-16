@@ -3,8 +3,8 @@
 | Tool | Gebruik |
 |---|---|
 | `resolve_project` | Verplicht eerst: actuele installatie- en PLC-projectmap uit de gedeelde serverarchive bepalen. |
-| `checkout_copy_and_release_component` | **Standaard:** één opgelost component uitchecken, alleen het unieke `.stu`-bestand uit een leaf-map naar de workspace kopiëren en daarna versieloos vrijgeven. `full_component=true` spiegelt de volledige componentstructuur. |
-| `checkout_component` | Alleen wanneer een gebruiker uitdrukkelijk een behouden native checkout vraagt; standaard wordt bij een workspace alleen het unieke `.stu`-bestand uit een leaf-map gekopieerd. |
+| `checkout_copy_and_release_component` | **Standaard:** één opgelost component uitchecken, alleen het unieke `.stu`-bestand uit een leaf-map kopiëren en daarna versieloos vrijgeven. Met een optionele bestaande `destination_folder` gebeurt die kopie rechtstreeks daarin; zonder die parameter blijft de workspace-routing actief. `full_component=true` spiegelt de volledige componentstructuur. |
+| `checkout_component` | Alleen wanneer een gebruiker uitdrukkelijk een behouden native checkout vraagt; standaard wordt bij een workspace alleen het unieke `.stu`-bestand uit een leaf-map gekopieerd. Een expliciete `destination_folder` voorkomt elke afleiding of toevoeging van submappen. |
 | `checkin_unchanged_component` | Eén al bestaande native checkout versieloos vrijgeven. |
 | `authenticate` | Eén OAuth2-verbindingstest via de wrapper uitvoeren. |
 

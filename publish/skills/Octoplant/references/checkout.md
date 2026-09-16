@@ -15,6 +15,13 @@ gespiegeld. Het artifact komt op:
 {workspace}\PLC-projecten\{installatienaam} - {kostenplaats}\{component_path}
 ```
 
+Een optionele `destination_folder` heeft voorrang op deze legacy-routing. Die
+moet een bestaande absolute map zijn. Bij een standaardcheckout kopieert
+Octoplant het unieke `.stu`-bestand rechtstreeks als
+`{destination_folder}\{stu-bestandsnaam}` en maakt of gebruikt hij geen enkele
+submap daaronder. Zonder `destination_folder` blijft de bovenstaande
+`checkout_root.joinpath(*component_parts)`-bestemming ongewijzigd.
+
 Wanneer `workspace_path` ontbreekt, retourneert de tool de componentlocatie in
 de lokale clientarchive. Gebruik voor de volledige lifecycle
 `checkout_copy_and_release_component`: die vereist een absolute
@@ -31,7 +38,8 @@ fysieke `ARCHIVE`-submap niet toe aan dit CLI-componentpad.
 
 Geef Octoplant een zichtbaar `⬇️✋ HANDOFF — Octoplant`-blok met de actie,
 installatie of kostenplaats, het PLC indien bekend en een absolute workspace
-voor een lokale projectkopie. Octoplant resolveert de
+voor een lokale projectkopie. Een orchestrator met een al berekende directe
+installatiemap geeft die als `Destination folder` door; Octoplant resolveert de
 component zelf en voert checkout, lokale mirror en versieloze vrijgave als één
 veilige flow uit.
 

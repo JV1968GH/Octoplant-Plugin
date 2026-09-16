@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Any, Optional
@@ -128,6 +129,30 @@ class OctoplantClient:
         )
 
     @staticmethod
+    def _resolve_destination_folder(destination_folder: Optional[str]) -> Optional[Path]:
+        """Resolve an explicit, already existing artifact destination folder."""
+        if destination_folder is None:
+            return None
+        if not isinstance(destination_folder, str) or not destination_folder.strip():
+            raise OctoplantConfigError(
+                "destination_folder must reference an existing absolute directory."
+            )
+
+        destination = Path(
+            os.path.expandvars(destination_folder.strip())
+        ).expanduser()
+        if not destination.is_absolute():
+            raise OctoplantConfigError(
+                "destination_folder must reference an existing absolute directory."
+            )
+        destination = destination.resolve()
+        if not destination.is_dir():
+            raise OctoplantConfigError(
+                "destination_folder must already exist as a directory."
+            )
+        return destination
+
+    @staticmethod
     def _resolve_existing_file(path_value: str, base_dir: Path) -> Path:
         candidate = Path(os.path.expandvars(path_value.strip())).expanduser()
         if not candidate.is_absolute():
@@ -137,6 +162,7 @@ class OctoplantClient:
     async def checkout_component(
         self,
         workspace_path: Optional[str] = None,
+        destination_folder: Optional[str] = None,
         installation_name: Optional[str] = None,
         cost_center: Optional[str] = None,
         component_path: Optional[str] = None,
@@ -150,7 +176,8 @@ class OctoplantClient:
         """Check out a component or folder through the native versiondog CLI."""
         if not isinstance(full_component, bool):
             raise OctoplantConfigError("full_component must be a boolean.")
-        checkout_root = self._resolve_checkout_root(
+        explicit_destination = self._resolve_destination_folder(destination_folder)
+        checkout_root = explicit_destination or self._resolve_checkout_root(
             workspace_path, installation_name, cost_center
         )
         if component_path is None:
@@ -211,7 +238,6 @@ class OctoplantClient:
             if checkout_root is None:
                 response["artifact_path"] = str(component_source)
             else:
-                artifact_path = checkout_root.joinpath(*component_parts)
                 try:
                     source_directory, file_name, mirror_options = (
                         self._artifact_copy_source(component_source, full_component)
@@ -220,29 +246,52 @@ class OctoplantClient:
                     response["status"] = "Checkout geslaagd, maar STU-artifact ontbreekt of is niet eenduidig"
                     response["mirror_returncode"] = 1
                     return response
-                mirror_result = await asyncio.to_thread(
-                    subprocess.run,
-                    [
-                        "robocopy",
-                        str(source_directory),
-                        str(artifact_path),
-                        *([file_name] if file_name is not None else []),
-                        *mirror_options,
-                        "/R:1",
-                        "/W:1",
-                        "/NFL",
-                        "/NDL",
-                        "/NP",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    cwd=self.runtime_path,
-                )
-                if mirror_result.returncode > 7:
-                    response["status"] = "Checkout geslaagd, maar artifactmirror mislukt"
-                    response["mirror_returncode"] = mirror_result.returncode
+                if explicit_destination is not None and file_name is not None:
+                    artifact_file = explicit_destination / file_name
+                    try:
+                        await asyncio.to_thread(
+                            shutil.copy2,
+                            source_directory / file_name,
+                            artifact_file,
+                        )
+                    except OSError:
+                        response["status"] = "Checkout geslaagd, maar directe STU-kopie mislukt"
+                        response["mirror_returncode"] = 1
+                    else:
+                        if not artifact_file.is_file() or artifact_file.parent != explicit_destination:
+                            response["status"] = "Checkout geslaagd, maar directe STU-kopie is ongeldig"
+                            response["mirror_returncode"] = 1
+                        else:
+                            response["artifact_path"] = str(artifact_file)
                 else:
-                    response["artifact_path"] = str(artifact_path)
+                    artifact_path = (
+                        checkout_root
+                        if explicit_destination is not None
+                        else checkout_root.joinpath(*component_parts)
+                    )
+                    mirror_result = await asyncio.to_thread(
+                        subprocess.run,
+                        [
+                            "robocopy",
+                            str(source_directory),
+                            str(artifact_path),
+                            *([file_name] if file_name is not None else []),
+                            *mirror_options,
+                            "/R:1",
+                            "/W:1",
+                            "/NFL",
+                            "/NDL",
+                            "/NP",
+                        ],
+                        capture_output=True,
+                        text=True,
+                        cwd=self.runtime_path,
+                    )
+                    if mirror_result.returncode > 7:
+                        response["status"] = "Checkout geslaagd, maar artifactmirror mislukt"
+                        response["mirror_returncode"] = mirror_result.returncode
+                    else:
+                        response["artifact_path"] = str(artifact_path)
         elif result.returncode == 2:
             response["status"] = "not_found"
         return response
@@ -302,10 +351,11 @@ class OctoplantClient:
 
     async def checkout_copy_and_release_component(
         self,
-        workspace_path: str,
-        installation_name: Optional[str],
-        cost_center: Optional[str],
         component_path: str,
+        workspace_path: Optional[str] = None,
+        installation_name: Optional[str] = None,
+        cost_center: Optional[str] = None,
+        destination_folder: Optional[str] = None,
         full_component: bool = False,
         with_backups: bool = False,
         number_of_archives: int = 1,
@@ -314,15 +364,19 @@ class OctoplantClient:
         comment: Optional[str] = None,
     ) -> dict[str, Any]:
         """Perform the complete targeted checkout, mirror, and release lifecycle."""
-        if self._resolve_workspace_path(workspace_path) is None:
+        if (
+            self._resolve_workspace_path(workspace_path) is None
+            and destination_folder is None
+        ):
             raise OctoplantConfigError(
-                "workspace_path is required for checkout, copy, and release."
+                "workspace_path or destination_folder is required for checkout, copy, and release."
             )
         if not isinstance(full_component, bool):
             raise OctoplantConfigError("full_component must be a boolean.")
 
         checkout = await self.checkout_component(
             workspace_path=workspace_path,
+            destination_folder=destination_folder,
             installation_name=installation_name,
             cost_center=cost_center,
             component_path=component_path,

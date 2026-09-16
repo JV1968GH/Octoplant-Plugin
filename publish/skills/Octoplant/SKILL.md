@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 3.1.0
+version: 3.2.0
 description: "Eenvoudige OctoPlant/versiondog-handoff voor een veilige lokale projectkopie zonder versiecreatie."
 ---
 
@@ -32,7 +32,8 @@ Actie: project lokaal beschikbaar maken
 Installatie: {installatienaam}
 Kostenplaats: {kostenplaats}
 PLC: {PLC-naam of nummer}
-Workspace: C:\pad\naar\de\hoofdworkspace
+Workspace: C:\pad\naar\de\hoofdworkspace (optioneel bij Destination folder)
+Destination folder: C:\pad\naar\de\directe\installatiemap (optioneel)
 Extra guardrails: {optioneel}
 Verwachte resultaten: {optioneel}
 ```
@@ -43,6 +44,13 @@ gecombineerde checkout-, standaard-STU-kopie- en versieloze-vrijgaveflow.
 Standaard wordt alleen het unieke `.stu`-bestand uit een leaf-map gekopieerd;
 met `full_component=true` blijft de volledige componentmirror beschikbaar. Er zijn geen
 downstream APG- of Control Expert-stappen.
+
+Wanneer `Destination folder` aanwezig is, gebruik die bestaande absolute map
+rechtstreeks als kopiedoel. Voeg dan nooit `PLC-projecten`, de installatie,
+het componentpad of een andere submap toe. Bij een standaard `.stu`-kopie moet
+het resultaat exact één bestand zijn waarvan de directe parent deze map is.
+Zonder `Destination folder` blijft de bestaande workspace-afgeleide routing
+ongewijzigd.
 
 ## Resultaat
 

@@ -16,6 +16,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
     @mcp.tool()
     async def checkout_component(
         workspace_path: Optional[str] = None,
+        destination_folder: Optional[str] = None,
         installation_name: Optional[str] = None,
         cost_center: Optional[str] = None,
         component_path: Optional[str] = None,
@@ -36,6 +37,9 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
             workspace_path:     Optionele absolute directe checkout-root, die
                                 indien nodig wordt aangemaakt. Zonder dit pad
                                 wordt de lokale clientarchive gebruikt.
+            destination_folder: Optionele bestaande absolute map voor een
+                                directe `.stu`-kopie. Wanneer opgegeven wordt
+                                geen componentpad of extra submap toegevoegd.
             installation_name:  Installatienaam uit de handoff.
             cost_center:        Kostenplaats uit de handoff.
             component_path:     Relatief pad binnen de archive met verplichte leading backslash,
@@ -55,6 +59,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         """
         return await client.checkout_component(
             workspace_path=workspace_path,
+            destination_folder=destination_folder,
             installation_name=installation_name,
             cost_center=cost_center,
             component_path=component_path,
@@ -79,10 +84,11 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
     @mcp.tool()
     async def checkout_copy_and_release_component(
-        workspace_path: str,
         component_path: str,
+        workspace_path: Optional[str] = None,
         installation_name: Optional[str] = None,
         cost_center: Optional[str] = None,
+        destination_folder: Optional[str] = None,
         full_component: bool = False,
         with_backups: bool = False,
         number_of_archives: int = 1,
@@ -94,10 +100,12 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
 
         Use component_path from resolve_project. The plugin releases the native
         checkout only after the checkout and artifact copy have succeeded.
-        By default only the unique .stu file in a leaf directory is copied.
+        destination_folder copies the unique .stu file directly into that
+        existing directory; otherwise workspace_path keeps legacy routing.
         """
         return await client.checkout_copy_and_release_component(
             workspace_path=workspace_path,
+            destination_folder=destination_folder,
             installation_name=installation_name,
             cost_center=cost_center,
             component_path=component_path,

@@ -154,7 +154,7 @@ class PluginPackageTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         version = source_manifest["version"]
 
-        self.assertEqual(version, "3.1.0")
+        self.assertEqual(version, "3.2.0")
         self.assertEqual(package_manifest["version"], version)
         self.assertIn(f'version = "{version}"', source_project)
         self.assertIn(f'version = "{version}"', package_project)
@@ -341,6 +341,53 @@ class WorkspaceResolutionTests(unittest.TestCase):
             self.assertEqual(mirror_command[3], "/MIR")
 
     @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_checkout_copies_stu_directly_to_an_explicit_destination_folder(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            native_checkout = Path(workspace) / "clientarchive"
+            component_source = (
+                native_checkout / "{root}" / "{installation}" / "{plc-project}"
+            )
+            component_source.mkdir(parents=True)
+            (component_source / "project.stu").touch()
+            destination = Path(workspace) / "PLC-projecten" / "Example installation - 100026"
+            destination.mkdir(parents=True)
+
+            with patch(
+                "src.client.subprocess.run",
+                return_value=subprocess.CompletedProcess(
+                    args=[],
+                    returncode=0,
+                    stdout=json.dumps({"checkout_path": str(native_checkout)}),
+                    stderr="",
+                ),
+            ) as run:
+                result = asyncio.run(
+                    client.checkout_component(
+                        destination_folder=str(destination),
+                        component_path=r"\{root}\{installation}\{plc-project}",
+                    )
+                )
+
+            self.assertEqual(
+                Path(result["artifact_path"]), destination.resolve() / "project.stu"
+            )
+            self.assertTrue((destination / "project.stu").is_file())
+            self.assertEqual(Path(result["artifact_path"]).parent, destination.resolve())
+            self.assertFalse((destination / "{root}").exists())
+            self.assertEqual(run.call_count, 1)
+
+    def test_checkout_rejects_a_missing_explicit_destination_folder(self) -> None:
+        client = OctoplantClient()
+        with self.assertRaisesRegex(OctoplantConfigError, "must already exist"):
+            asyncio.run(
+                client.checkout_component(
+                    destination_folder="/definitely/missing/octoplant-destination",
+                    component_path=r"\{root}\{installation}\{plc-project}",
+                )
+            )
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
     def test_checkout_fails_artifact_copy_when_stu_is_not_unique(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()
@@ -525,6 +572,49 @@ class WorkspaceResolutionTests(unittest.TestCase):
                 r"\{root}\{installation}\{plc-project}",
             ],
         )
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_lifecycle_copies_to_the_explicit_destination_before_releasing(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            native_checkout = Path(workspace) / "clientarchive"
+            component_source = (
+                native_checkout / "{root}" / "{installation}" / "{plc-project}"
+            )
+            component_source.mkdir(parents=True)
+            (component_source / "project.stu").touch()
+            destination = Path(workspace) / "PLC-projecten" / "Example installation - 100026"
+            destination.mkdir(parents=True)
+
+            with patch(
+                "src.client.subprocess.run",
+                side_effect=[
+                    subprocess.CompletedProcess(
+                        args=[],
+                        returncode=0,
+                        stdout=json.dumps({"checkout_path": str(native_checkout)}),
+                        stderr="",
+                    ),
+                    subprocess.CompletedProcess(args=[], returncode=0),
+                ],
+            ) as run:
+                result = asyncio.run(
+                    client.checkout_copy_and_release_component(
+                        workspace_path=None,
+                        installation_name=None,
+                        cost_center=None,
+                        component_path=r"\{root}\{installation}\{plc-project}",
+                        destination_folder=str(destination),
+                    )
+                )
+
+        self.assertTrue(result["success"])
+        self.assertTrue(result["release_executed"])
+        self.assertEqual(
+            Path(result["checkout"]["artifact_path"]),
+            destination.resolve() / "project.stu",
+        )
+        self.assertEqual(run.call_count, 2)
 
     @patch.dict("src.client.os.environ", {}, clear=True)
     def test_lifecycle_does_not_release_after_mirror_failure(self) -> None:

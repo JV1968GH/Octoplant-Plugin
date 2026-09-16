@@ -4,7 +4,7 @@ MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) veilige
 OctoPlant/versiondog-navigatie, gerichte checkout en gecontroleerde
 checkoutvrijgave biedt.
 
-**Release:** 3.1.0
+**Release:** 3.2.0
 
 > **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
 > check-in zonder nieuwe versie. Maintenance mode en andere mutaties
@@ -205,6 +205,7 @@ checkout_copy_and_release_component(
     installation_name = "{installatie-naam}",
     cost_center = "{kostenplaats}",
     component_path = "\RWZI's\{installatiemap}\{PLC-project}",
+    destination_folder = "C:\\pad\\naar\\de\\directe-installatiemap",
     full_component = false
 )
 ```
@@ -214,6 +215,9 @@ uitgecheckte component naar de bestemming gekopieerd. Zet `full_component` op
 `true` om de volledige componentstructuur zoals voorheen te spiegelen. Gebruik deze tool wanneer het resultaat lokaal beschikbaar moet zijn maar de
 bovenliggende orchestrator geen afzonderlijke Octoplant-stappen hoeft te
 plannen. Bij een checkout- of mirrorfout wordt geen vrijgave aangeroepen.
+Wanneer `destination_folder` is opgegeven, moet die map al bestaan en wordt
+het unieke `.stu`-bestand rechtstreeks daarin gekopieerd. Octoplant voegt dan
+geen componentpad of andere submap toe.
 
 ---
 
@@ -237,6 +241,11 @@ Uitgecheckte bestanden worden gespiegeld naar:
 ```
 {workspace}\PLC-projecten\{installatie-naam} - {kostenplaats}\{componentpad}
 ```
+
+Dit is de legacybestemming wanneer geen `destination_folder` is opgegeven. Met
+een bestaande absolute `destination_folder` gebruikt Octoplant exact die map;
+de standaard `.stu`-kopie komt dan op
+`{destination_folder}\{stu-bestandsnaam}`, zonder submappen.
 
 De MCP-server start vanuit de plugininstallatiemap, maar gebruikt uitsluitend
 de initiële handoff-workspace als artifactroot. Wanneer maar een van
