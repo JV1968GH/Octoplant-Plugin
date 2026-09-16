@@ -4,7 +4,7 @@ MCP-server die AI-assistenten (GitHub Copilot, Claude Desktop, …) veilige
 OctoPlant/versiondog-navigatie, gerichte checkout en gecontroleerde
 checkoutvrijgave biedt.
 
-**Release:** 3.0.3
+**Release:** 3.1.0
 
 > **Scope:** navigatie en gerichte checkout, plus uitsluitend een expliciet
 > check-in zonder nieuwe versie. Maintenance mode en andere mutaties
@@ -153,6 +153,7 @@ Parameters:
 | `installation_name` | string | Installatienaam uit de handoff; met kostenplaats vormt dit de artifactmap |
 | `cost_center` | string | Kostenplaats uit de handoff; met installatienaam vormt dit de artifactmap |
 | `component_path` | string | Relatief componentpad (met leading `\`) |
+| `full_component` | bool | Volledige componentstructuur spiegelen (standaard: `false`); standaard wordt alleen het unieke `.stu`-bestand uit een leaf-map gekopieerd |
 | `with_backups` | bool | Backups meenemen (standaard: false) |
 | `number_of_archives` | int | Aantal archives (0 = alle, standaard 1) |
 | `version` | int | Specifiek versienummer (standaard: huidig) |
@@ -203,11 +204,14 @@ checkout_copy_and_release_component(
     workspace_path = "C:\\pad\\naar\\de\\hoofdchat-workspace",
     installation_name = "{installatie-naam}",
     cost_center = "{kostenplaats}",
-    component_path = "\RWZI's\{installatiemap}\{PLC-project}"
+    component_path = "\RWZI's\{installatiemap}\{PLC-project}",
+    full_component = false
 )
 ```
 
-Gebruik deze tool wanneer het resultaat lokaal beschikbaar moet zijn maar de
+Standaard wordt uitsluitend het unieke `.stu`-bestand uit de leaf-map van de
+uitgecheckte component naar de bestemming gekopieerd. Zet `full_component` op
+`true` om de volledige componentstructuur zoals voorheen te spiegelen. Gebruik deze tool wanneer het resultaat lokaal beschikbaar moet zijn maar de
 bovenliggende orchestrator geen afzonderlijke Octoplant-stappen hoeft te
 plannen. Bij een checkout- of mirrorfout wordt geen vrijgave aangeroepen.
 

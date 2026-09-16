@@ -6,8 +6,10 @@ verboden.
 
 Met een absolute `workspace_path` leidt de tool de installatie-root af. De
 native checkout gebruikt altijd de geconfigureerde clientarchive als `/RD`;
-na succes wordt uitsluitend het geresolveerde component naar de artifactroot
-gespiegeld. Het component komt op:
+na succes wordt standaard uitsluitend het unieke `.stu`-bestand uit een
+leaf-map van het geresolveerde component naar de artifactroot gekopieerd. Met
+`full_component=true` wordt de volledige componentstructuur zoals voorheen
+gespiegeld. Het artifact komt op:
 
 ```text
 {workspace}\PLC-projecten\{installatienaam} - {kostenplaats}\{component_path}

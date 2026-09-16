@@ -1,6 +1,6 @@
 ---
 name: Octoplant
-version: 3.0.3
+version: 3.1.0
 description: "Eenvoudige OctoPlant/versiondog-handoff voor een veilige lokale projectkopie zonder versiecreatie."
 ---
 
@@ -39,7 +39,9 @@ Verwachte resultaten: {optioneel}
 
 Octoplant resolveert altijd eerst de actuele serverarchive en behandelt
 daarna precies één component. Hij gebruikt voor een lokale kopie de
-gecombineerde checkout-, mirror- en versieloze-vrijgaveflow. Er zijn geen
+gecombineerde checkout-, standaard-STU-kopie- en versieloze-vrijgaveflow.
+Standaard wordt alleen het unieke `.stu`-bestand uit een leaf-map gekopieerd;
+met `full_component=true` blijft de volledige componentmirror beschikbaar. Er zijn geen
 downstream APG- of Control Expert-stappen.
 
 ## Resultaat

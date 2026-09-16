@@ -154,7 +154,7 @@ class PluginPackageTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         version = source_manifest["version"]
 
-        self.assertEqual(version, "3.0.3")
+        self.assertEqual(version, "3.1.0")
         self.assertEqual(package_manifest["version"], version)
         self.assertIn(f'version = "{version}"', source_project)
         self.assertIn(f'version = "{version}"', package_project)
@@ -238,6 +238,17 @@ class WorkspaceResolutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()
             resolved_workspace = Path(workspace).resolve()
+            component_source = (
+                resolved_workspace
+                / "PLC-projecten"
+                / "Example installation - 100026"
+                / "{root}"
+                / "{installation}"
+                / "{plc-project}"
+            )
+            stu_file = component_source / "project.stu"
+            component_source.mkdir(parents=True)
+            stu_file.touch()
 
             with patch(
                 "src.client.subprocess.run",
@@ -293,11 +304,75 @@ class WorkspaceResolutionTests(unittest.TestCase):
             )
             mirror_command = run.call_args_list[1].args[0]
             self.assertEqual(mirror_command[0], "robocopy")
-            self.assertEqual(mirror_command[3:5], ["/MIR", "/R:1"])
+            self.assertEqual(mirror_command[1:4], [str(component_source), str(Path(result["artifact_path"])), "project.stu"])
+            self.assertNotIn("/MIR", mirror_command)
+            self.assertIn("/R:1", mirror_command)
             self.assertNotEqual(
                 Path(result["checkout_path"]).parent,
                 Path(__file__).resolve().parents[1],
             )
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_checkout_mirrors_full_component_when_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            resolved_workspace = Path(workspace).resolve()
+
+            with patch(
+                "src.client.subprocess.run",
+                return_value=subprocess.CompletedProcess(
+                    args=[],
+                    returncode=0,
+                    stdout=json.dumps({"checkout_path": str(resolved_workspace)}),
+                    stderr="",
+                ),
+            ) as run:
+                asyncio.run(
+                    client.checkout_component(
+                        workspace,
+                        installation_name="Example installation",
+                        cost_center="100026",
+                        component_path=r"\{root}\{installation}\{plc-project}",
+                        full_component=True,
+                    )
+                )
+
+            mirror_command = run.call_args_list[1].args[0]
+            self.assertEqual(mirror_command[3], "/MIR")
+
+    @patch.dict("src.client.os.environ", {}, clear=True)
+    def test_checkout_fails_artifact_copy_when_stu_is_not_unique(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            client = OctoplantClient()
+            component_source = (
+                Path(workspace) / "{root}" / "{installation}" / "{plc-project}"
+            )
+            component_source.mkdir(parents=True)
+
+            with patch(
+                "src.client.subprocess.run",
+                return_value=subprocess.CompletedProcess(
+                    args=[],
+                    returncode=0,
+                    stdout=json.dumps({"checkout_path": workspace}),
+                    stderr="",
+                ),
+            ) as run:
+                result = asyncio.run(
+                    client.checkout_component(
+                        workspace,
+                        installation_name="Example installation",
+                        cost_center="100026",
+                        component_path=r"\{root}\{installation}\{plc-project}",
+                    )
+                )
+
+            self.assertEqual(
+                result["status"],
+                "Checkout geslaagd, maar STU-artifact ontbreekt of is niet eenduidig",
+            )
+            self.assertEqual(result["mirror_returncode"], 1)
+            self.assertEqual(run.call_count, 1)
 
     @patch.dict("src.client.os.environ", {}, clear=True)
     def test_checkout_without_workspace_uses_the_configured_clientarchive(self) -> None:
@@ -408,6 +483,11 @@ class WorkspaceResolutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()
             native_checkout = Path(workspace) / "clientarchive"
+            component_source = (
+                native_checkout / "{root}" / "{installation}" / "{plc-project}"
+            )
+            component_source.mkdir(parents=True)
+            (component_source / "project.stu").touch()
 
             checkout_result = subprocess.CompletedProcess(
                 args=[],
@@ -450,6 +530,11 @@ class WorkspaceResolutionTests(unittest.TestCase):
     def test_lifecycle_does_not_release_after_mirror_failure(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:
             client = OctoplantClient()
+            component_source = (
+                Path(workspace) / "{root}" / "{installation}" / "{plc-project}"
+            )
+            component_source.mkdir(parents=True)
+            (component_source / "project.stu").touch()
             checkout_result = subprocess.CompletedProcess(
                 args=[],
                 returncode=0,

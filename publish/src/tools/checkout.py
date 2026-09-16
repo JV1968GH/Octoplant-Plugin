@@ -19,6 +19,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         installation_name: Optional[str] = None,
         cost_center: Optional[str] = None,
         component_path: Optional[str] = None,
+        full_component: bool = False,
         with_backups: bool = False,
         number_of_archives: int = 1,
         version: Optional[int] = None,
@@ -39,6 +40,9 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
             cost_center:        Kostenplaats uit de handoff.
             component_path:     Relatief pad binnen de archive met verplichte leading backslash,
                                 bijv. "\\{hoofdmap}\\{installatiemap}\\{PLC-project}".
+            full_component:     True = de volledige componentstructuur spiegelen;
+                                standaard False = alleen het unieke .stu-bestand uit
+                                een leaf-map kopiëren.
             with_backups:       True = backups ook uitchecken (standaard False).
             number_of_archives: Aantal te checken archives (0 = alle, standaard 1).
             version:            Versienummer om te checken; standaard = huidige versie.
@@ -54,6 +58,7 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
             installation_name=installation_name,
             cost_center=cost_center,
             component_path=component_path,
+            full_component=full_component,
             with_backups=with_backups,
             number_of_archives=number_of_archives,
             version=version,
@@ -78,22 +83,25 @@ def register_checkout_tools(mcp: FastMCP, client: OctoplantClient) -> None:
         component_path: str,
         installation_name: Optional[str] = None,
         cost_center: Optional[str] = None,
+        full_component: bool = False,
         with_backups: bool = False,
         number_of_archives: int = 1,
         version: Optional[int] = None,
         with_std_libs: bool = False,
         comment: Optional[str] = None,
     ) -> dict:
-        """Check out, mirror, and release one component as one lifecycle.
+        """Check out, copy the requested artifact, and release one component.
 
         Use component_path from resolve_project. The plugin releases the native
-        checkout only after the checkout and artifact mirror have succeeded.
+        checkout only after the checkout and artifact copy have succeeded.
+        By default only the unique .stu file in a leaf directory is copied.
         """
         return await client.checkout_copy_and_release_component(
             workspace_path=workspace_path,
             installation_name=installation_name,
             cost_center=cost_center,
             component_path=component_path,
+            full_component=full_component,
             with_backups=with_backups,
             number_of_archives=number_of_archives,
             version=version,

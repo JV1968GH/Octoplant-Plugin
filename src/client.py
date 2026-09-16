@@ -140,6 +140,7 @@ class OctoplantClient:
         installation_name: Optional[str] = None,
         cost_center: Optional[str] = None,
         component_path: Optional[str] = None,
+        full_component: bool = False,
         with_backups: bool = False,
         number_of_archives: int = 1,
         version: Optional[int] = None,
@@ -147,6 +148,8 @@ class OctoplantClient:
         comment: Optional[str] = None,
     ) -> dict[str, Any]:
         """Check out a component or folder through the native versiondog CLI."""
+        if not isinstance(full_component, bool):
+            raise OctoplantConfigError("full_component must be a boolean.")
         checkout_root = self._resolve_checkout_root(
             workspace_path, installation_name, cost_center
         )
@@ -209,13 +212,22 @@ class OctoplantClient:
                 response["artifact_path"] = str(component_source)
             else:
                 artifact_path = checkout_root.joinpath(*component_parts)
+                try:
+                    source_directory, file_name, mirror_options = (
+                        self._artifact_copy_source(component_source, full_component)
+                    )
+                except OctoplantConfigError:
+                    response["status"] = "Checkout geslaagd, maar STU-artifact ontbreekt of is niet eenduidig"
+                    response["mirror_returncode"] = 1
+                    return response
                 mirror_result = await asyncio.to_thread(
                     subprocess.run,
                     [
                         "robocopy",
-                        str(component_source),
+                        str(source_directory),
                         str(artifact_path),
-                        "/MIR",
+                        *([file_name] if file_name is not None else []),
+                        *mirror_options,
                         "/R:1",
                         "/W:1",
                         "/NFL",
@@ -234,6 +246,27 @@ class OctoplantClient:
         elif result.returncode == 2:
             response["status"] = "not_found"
         return response
+
+    @staticmethod
+    def _artifact_copy_source(
+        component_source: Path, full_component: bool
+    ) -> tuple[Path, Optional[str], list[str]]:
+        """Return the source and robocopy options for the requested artifact."""
+        if full_component:
+            return component_source, None, ["/MIR"]
+
+        stu_files = sorted(
+            path
+            for path in component_source.rglob("*")
+            if path.is_file()
+            and path.suffix.lower() == ".stu"
+            and not any(child.is_dir() for child in path.parent.iterdir())
+        )
+        if len(stu_files) != 1:
+            raise OctoplantConfigError(
+                "Expected exactly one .stu file in a leaf directory of the checked-out component."
+            )
+        return stu_files[0].parent, stu_files[0].name, []
 
     async def checkin_unchanged_component(self, component_path: str) -> dict[str, Any]:
         """Release exactly one unchanged native checkout without creating a version."""
@@ -273,6 +306,7 @@ class OctoplantClient:
         installation_name: Optional[str],
         cost_center: Optional[str],
         component_path: str,
+        full_component: bool = False,
         with_backups: bool = False,
         number_of_archives: int = 1,
         version: Optional[int] = None,
@@ -284,12 +318,15 @@ class OctoplantClient:
             raise OctoplantConfigError(
                 "workspace_path is required for checkout, copy, and release."
             )
+        if not isinstance(full_component, bool):
+            raise OctoplantConfigError("full_component must be a boolean.")
 
         checkout = await self.checkout_component(
             workspace_path=workspace_path,
             installation_name=installation_name,
             cost_center=cost_center,
             component_path=component_path,
+            full_component=full_component,
             with_backups=with_backups,
             number_of_archives=number_of_archives,
             version=version,

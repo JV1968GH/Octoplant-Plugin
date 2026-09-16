@@ -33,7 +33,9 @@ Verwachte resultaten: {optioneel}
 
 For every project checkout, resolve one component and then use
 `checkout_copy_and_release_component`. This keeps checkout, local copy, and
-native release within Octoplant. Use `checkout_component` only when the
+native release within Octoplant. The default local copy is the unique `.stu`
+file from a leaf directory; use `full_component=true` only when the complete
+component structure is needed. Use `checkout_component` only when the
 handoff explicitly asks to retain the native checkout. Never enable version
 creation: `Enabled=N`, `WithoutComparison=Y`, and `ReleaseAfterCheckIn=Y` are mandatory.
 
